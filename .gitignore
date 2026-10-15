@@ -1,0 +1,41 @@
+# Entornos y secretos
+.env
+.env.local
+*.env.produccion
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Bases de datos locales
+*.db
+*.sqlite3
+api/fidelizacion.db
+
+# Node / frontends
+node_modules/
+dist/
+.vite/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Cola offline del conector
+connector-zencillo/cola_offline.json
+connector-zencillo/*.log
+connector-zencillo/*.procesados.json
+connector-zencillo/ventas_zencillo.csv
+connector-zencillo/datos/
+
+# Respaldos y volcados
+backups/
+*.dump
+*.sql

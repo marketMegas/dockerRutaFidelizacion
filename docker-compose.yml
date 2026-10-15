@@ -1,0 +1,91 @@
+name: fidelizacion-glp
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fidelizacion}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fidelizacion}
+      POSTGRES_DB: ${POSTGRES_DB:-fidelizacion}
+    volumes:
+      - datos_db:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fidelizacion} -d ${POSTGRES_DB:-fidelizacion}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - datos_redis:/data
+    ports:
+      - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://fidelizacion:fidelizacion@db:5432/fidelizacion}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8002:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  panel:
+    build: ./panel
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5139:80"
+
+  pwa:
+    build: ./pwa
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5140:80"
+
+  connector:
+    build: ./connector-zencillo
+    restart: unless-stopped
+    profiles: ["conector"]
+    env_file: .env
+    environment:
+      FID_API_URL: http://api:8000/fid-api
+      ESTACION_ID: ${ESTACION_ID:-EDS-01}
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - datos_conector:/app/datos
+
+volumes:
+  datos_db:
+  datos_redis:
+  datos_conector:

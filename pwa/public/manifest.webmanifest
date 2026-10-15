@@ -1,0 +1,24 @@
+{
+  "name": "GasLP Puntos",
+  "short_name": "GasLP Puntos",
+  "description": "Suma puntos por tu consumo en la estacion de GLP y canjealos por recompensas.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#5fbd44",
+  "theme_color": "#5fbd44",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "480x360",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

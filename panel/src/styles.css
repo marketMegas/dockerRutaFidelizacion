@@ -1,0 +1,386 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  --green: #5fbd44;
+  --green-2: #4aa036;
+  --green-3: #3c8a2c;
+  --orange: #f68811;
+  --orange-2: #d9780c;
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --line: #d9e9d3;
+  --text: #17331c;
+  --muted: #6d8a72;
+  --danger: #cf4040;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(60, 138, 44, 0.08), 0 8px 24px -12px rgba(60, 138, 44, 0.22);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+}
+
+h4 {
+  font-size: 0.95rem;
+  color: var(--green-3);
+  text-transform: none;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--green);
+  color: #fff;
+  padding: 1.5rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  font-size: 1.25rem;
+  color: #fff;
+  margin: 0 0 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+}
+
+.brand span {
+  color: var(--orange);
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sidebar nav button {
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar nav button:hover {
+  background: var(--green-2);
+  color: #fff;
+}
+
+.sidebar nav button.activo {
+  background: var(--green-2);
+  color: #fff;
+  border-left-color: var(--orange);
+}
+
+.salir {
+  margin-top: auto;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+  padding: 0.55rem;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.salir:hover {
+  border-color: var(--orange);
+}
+
+.contenido {
+  padding: 2rem 2.5rem;
+  max-width: 1200px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.card-t {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.card-v {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--orange);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.card-s {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.fila {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+input {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  min-width: 140px;
+}
+
+input:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+  border-color: var(--green);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  padding: 0.5rem 0.85rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+button:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+form.fila button,
+.login button {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange-2);
+  font-weight: 600;
+}
+
+form.fila button:hover,
+.login button:hover {
+  background: var(--orange-2);
+  color: #fff;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  background: #eef7ea;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--green-3);
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+tbody tr:hover td {
+  background: #f5fbf3;
+}
+
+.pos {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.neg {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  background: #fdeced;
+  border: 1px solid #f5c6c8;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.panel-detalle {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--line);
+}
+
+.barra {
+  width: 140px;
+  height: 8px;
+  background: #e3f1dc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barra-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--orange));
+}
+
+.login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(1200px 600px at 80% -10%, var(--green-2) 0%, var(--green) 55%);
+  padding: 1rem;
+}
+
+.login form {
+  background: #fff;
+  border-radius: 14px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.35);
+}
+
+.login h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.login label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.login input {
+  width: 100%;
+}
+
+.login button {
+  padding: 0.65rem;
+}
+
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .brand {
+    border: 0;
+    margin: 0;
+    flex: 1;
+  }
+  .sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .salir {
+    margin-top: 0;
+  }
+  .contenido {
+    padding: 1.25rem;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+}

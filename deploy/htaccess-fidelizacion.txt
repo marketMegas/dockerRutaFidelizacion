@@ -1,0 +1,15 @@
+# Reglas de rewrite del subdominio fidelizacion.megas.com.co
+# Pega esto en CyberPanel > Websites > fidelizacion.megas.com.co > Rewrite Rules.
+#
+# /fid-api/  -> API FastAPI        (127.0.0.1:8002)
+# /panel/    -> Panel admin        (127.0.0.1:5139)
+# /          -> PWA del cliente    (127.0.0.1:5140)
+
+RewriteEngine On
+
+RewriteRule ^fid-api/(.*)$ http://127.0.0.1:8002/fid-api/$1 [P,L]
+
+RewriteRule ^panel/?$ http://127.0.0.1:5139/panel/ [P,L]
+RewriteRule ^panel/(.*)$ http://127.0.0.1:5139/panel/$1 [P,L]
+
+RewriteRule ^(.*)$ http://127.0.0.1:5140/$1 [P,L]
