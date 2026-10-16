@@ -1,3 +1,6 @@
+import secrets
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -5,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     DEBUG: bool = False
-    SECRET_KEY: str = "dev-secret-change-me"
+    SECRET_KEY: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
     DATABASE_URL: str = "sqlite:///./fidelizacion.db"
     REDIS_URL: str = ""
     ADMIN_USER: str = "admin"

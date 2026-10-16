@@ -1,4 +1,16 @@
+from app.services import rate_limit
 from tests.conftest import PREFIX, login_cliente, solicitar_otp
+
+
+def test_rate_limit_fallback_usa_memoria():
+    rate_limit._memoria.clear()
+    rate_limit._cliente = None
+    rate_limit._inicializado = True
+
+    clave = "unit-test-rate-limit"
+    assert rate_limit.permitir(clave, 2, 60)
+    assert rate_limit.permitir(clave, 2, 60)
+    assert not rate_limit.permitir(clave, 2, 60)
 
 
 def test_identificar_inexistente(client):

@@ -234,7 +234,21 @@ form.fila button:hover,
 }
 
 td button + button {
-  margin-left: 0.5rem;
+  margin-left: 0;
+}
+
+.reglas-acciones-celda {
+  min-width: 150px;
+}
+
+.reglas-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.reglas-acciones button {
+  flex: 1 1 auto;
 }
 
 .miniatura {
@@ -408,5 +422,90 @@ tbody tr:hover td {
   table {
     display: block;
     overflow-x: auto;
+  }
+  .reglas-acciones {
+    flex-direction: column;
+  }
+  .reglas-acciones button {
+    width: 100%;
+  }
+  .reglas-tabla {
+    display: block;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+  .reglas-tabla thead {
+    display: none;
+  }
+  .reglas-tabla tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .reglas-tabla tbody tr {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .reglas-tabla tbody tr:hover td {
+    background: var(--panel);
+  }
+  .reglas-tabla tbody td {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 0.7fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .reglas-tabla tbody td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .reglas-tabla tbody td.reglas-acciones-celda {
+    display: block;
+    padding: 0.75rem;
+    border-bottom: 0;
+  }
+  .reglas-tabla .reglas-acciones-celda::before {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .reglas-tabla .reglas-acciones {
+    flex-direction: column;
+  }
+  .reglas-tabla .reglas-acciones button {
+    min-height: 44px;
+    width: 100%;
+  }
+  .reglas-tabla tbody td input:not([type='checkbox']) {
+    width: 100%;
+    min-width: 0;
+  }
+  .reglas-tabla tbody td input[type='checkbox'] {
+    min-width: 0;
+    justify-self: start;
+  }
+  .reglas-tabla tbody td.reglas-vacia {
+    display: block;
+    padding: 1rem;
+  }
+  .reglas-tabla tbody td.reglas-vacia::before {
+    content: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .contenido {
+    padding: 0.75rem;
+  }
+  .reglas-tabla tbody td {
+    grid-template-columns: minmax(4.5rem, 0.65fr) minmax(0, 1fr);
+    gap: 0.45rem;
+    padding: 0.6rem;
   }
 }

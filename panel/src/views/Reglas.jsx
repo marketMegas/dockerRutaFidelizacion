@@ -126,7 +126,7 @@ export default function Reglas() {
       {mensaje && <p className="ok">{mensaje}</p>}
       {error && <p className="error">{error}</p>}
 
-      <table>
+      <table className="reglas-tabla">
         <thead>
           <tr>
             <th>Nombre</th>
@@ -143,10 +143,10 @@ export default function Reglas() {
             if (editando === r.id) {
               return (
                 <tr key={r.id}>
-                  <td>
+                  <td data-label="Nombre">
                     <input value={edit.nombre} onChange={cambiar(setEdit, 'nombre')} required />
                   </td>
-                  <td>
+                  <td data-label="Puntos / litro">
                     <input
                       type="number"
                       step="0.01"
@@ -155,47 +155,51 @@ export default function Reglas() {
                       onChange={cambiar(setEdit, 'puntos_por_litro')}
                     />
                   </td>
-                  <td>
+                  <td data-label="Prioridad">
                     <input type="number" value={edit.prioridad} onChange={cambiar(setEdit, 'prioridad')} />
                   </td>
-                  <td>
+                  <td data-label="Desde">
                     <input type="datetime-local" value={edit.desde} onChange={cambiar(setEdit, 'desde')} />
                   </td>
-                  <td>
+                  <td data-label="Hasta">
                     <input type="datetime-local" value={edit.hasta} onChange={cambiar(setEdit, 'hasta')} />
                   </td>
-                  <td>
+                  <td data-label="Estado">
                     <input
                       type="checkbox"
                       checked={!!edit.activa}
                       onChange={(e) => setEdit({ ...edit, activa: e.target.checked })}
                     />
                   </td>
-                  <td>
-                    <button onClick={guardar}>Guardar</button>
-                    <button onClick={cancelar}>Cancelar</button>
+                  <td className="reglas-acciones-celda" data-label="Acciones">
+                    <div className="reglas-acciones">
+                      <button onClick={guardar}>Guardar</button>
+                      <button onClick={cancelar}>Cancelar</button>
+                    </div>
                   </td>
                 </tr>
               )
             }
             return (
               <tr key={r.id}>
-                <td>{r.nombre}</td>
-                <td>{r.puntos_por_litro}</td>
-                <td>{r.prioridad}</td>
-                <td>{r.desde ? fmtFecha(r.desde) : '-'}</td>
-                <td>{r.hasta ? fmtFecha(r.hasta) : '-'}</td>
-                <td>{r.activa ? 'Activa' : 'Inactiva'}</td>
-                <td>
-                  <button onClick={() => editar(r)}>Editar</button>
-                  <button onClick={() => alternar(r)}>{r.activa ? 'Desactivar' : 'Activar'}</button>
+                <td data-label="Nombre">{r.nombre}</td>
+                <td data-label="Puntos / litro">{r.puntos_por_litro}</td>
+                <td data-label="Prioridad">{r.prioridad}</td>
+                <td data-label="Desde">{r.desde ? fmtFecha(r.desde) : '-'}</td>
+                <td data-label="Hasta">{r.hasta ? fmtFecha(r.hasta) : '-'}</td>
+                <td data-label="Estado">{r.activa ? 'Activa' : 'Inactiva'}</td>
+                <td className="reglas-acciones-celda" data-label="Acciones">
+                  <div className="reglas-acciones">
+                    <button onClick={() => editar(r)}>Editar</button>
+                    <button onClick={() => alternar(r)}>{r.activa ? 'Desactivar' : 'Activar'}</button>
+                  </div>
                 </td>
               </tr>
             )
           })}
           {reglas.length === 0 && (
             <tr>
-              <td colSpan="7" className="muted">
+              <td colSpan="7" className="muted reglas-vacia">
                 Aun no hay reglas
               </td>
             </tr>
