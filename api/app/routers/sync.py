@@ -57,6 +57,8 @@ def sincronizar_venta(
         }
 
     cliente = _resolver_cliente(db, body)
+    if body.placa:
+        cliente.placa = body.placa.strip().upper()[:10]
 
     puntos, regla = calcular_puntos(db, body.volumen_litros)
     venta = Venta(

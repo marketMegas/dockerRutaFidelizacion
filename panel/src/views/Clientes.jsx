@@ -40,7 +40,7 @@ export default function Clientes() {
       <h2>Clientes</h2>
       <div className="fila">
         <input
-          placeholder="Buscar por telefono o nombre"
+          placeholder="Buscar por cedula, placa, telefono o nombre"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && cargar()}
@@ -52,8 +52,10 @@ export default function Clientes() {
       <table>
         <thead>
           <tr>
+            <th>Cedula</th>
             <th>Telefono</th>
             <th>Nombre</th>
+            <th>Placa</th>
             <th>Puntos</th>
             <th></th>
           </tr>
@@ -61,8 +63,10 @@ export default function Clientes() {
         <tbody>
           {data.clientes.map((c) => (
             <tr key={c.id}>
+              <td>{c.cedula}</td>
               <td>{c.telefono}</td>
               <td>{c.nombre || '-'}</td>
+              <td>{c.placa || '-'}</td>
               <td>{c.puntos}</td>
               <td>
                 <button onClick={() => ver(c.id)}>Detalle</button>
@@ -76,7 +80,8 @@ export default function Clientes() {
         <div className="panel-detalle">
           <div className="fila">
             <h3>
-              {detalle.cliente.nombre || detalle.cliente.telefono} - {detalle.cliente.puntos} pts
+              {detalle.cliente.nombre || detalle.cliente.telefono} - C.C. {detalle.cliente.cedula}
+              {detalle.cliente.placa ? ` - ${detalle.cliente.placa}` : ''} - {detalle.cliente.puntos} pts
             </h3>
             <button onClick={() => setDetalle(null)}>Cerrar</button>
           </div>

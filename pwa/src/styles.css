@@ -259,6 +259,19 @@ button.primario:hover {
   font-size: 0.78rem;
 }
 
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.valor {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  word-break: break-word;
+}
+
 .fecha {
   font-size: 0.72rem;
 }

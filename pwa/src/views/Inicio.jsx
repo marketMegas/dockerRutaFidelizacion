@@ -10,7 +10,7 @@ export default function Inicio({ cliente, refrescar }) {
   const generar = useCallback(async () => {
     try {
       const data = await api('/clientes/me/qr')
-      setQr(await QRCode.toDataURL(data.payload, { width: 260, margin: 1, color: { dark: '#0e1b2a', light: '#ffffff' } }))
+      setQr(await QRCode.toDataURL(data.payload, { width: 260, margin: 1, color: { dark: '#17331c', light: '#ffffff' } }))
       setSegundos(data.expira_en_segundos)
     } catch (e) {
       setError(e.message)

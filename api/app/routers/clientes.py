@@ -15,8 +15,10 @@ router = APIRouter(prefix="/clientes", tags=["clientes"])
 def mi_perfil(cliente: Cliente = Depends(require_cliente)):
     return {
         "id": cliente.id,
+        "cedula": cliente.cedula,
         "telefono": cliente.telefono,
         "nombre": cliente.nombre,
+        "placa": cliente.placa,
         "email": cliente.email,
         "puntos": cliente.puntos,
         "created_at": cliente.created_at,

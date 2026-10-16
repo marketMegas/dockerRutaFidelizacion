@@ -21,7 +21,8 @@ integracion con Zencillo.
 | `redis`               | Cache / support                                              | redis:7-alpine              | interno       |
 
 Flujo de puntos: el conector envia una venta a `POST /fid-api/sync/venta` con el telefono o el
-QR del cliente; la API calcula puntos con la regla vigente y registra un movimiento inmutable
+QR del cliente y la placa del vehiculo (la ultima placa queda guardada en el cliente); la API
+calcula puntos con la regla vigente y registra un movimiento inmutable
 en el ledger. El panel y la PWA leen saldos y movimientos desde la misma API.
 
 El ledger nunca borra movimientos: los canjes y reversos se anotan como movimientos nuevos. Un
@@ -41,14 +42,17 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- PWA cliente: http://localhost:5140
+- PWA cliente: http://localhost:5140 — pestañas: `Mis datos` (primera), `Mi QR`, `Historial`, `Recompensas`
 - Panel admin: http://localhost:5139/panel/  (usuario `admin` / `admin123` por defecto)
 - API: http://localhost:8002/health
 - Conector (opcional, perfil aparte): `docker compose --profile conector up -d`
 
-Con `DEBUG=True` la API devuelve el codigo OTP en la respuesta (`debug_codigo`), util para
-probar el login sin SMS. En produccion `DEBUG=False` y el OTP debe enviarse por un proveedor
-de SMS (punto de extension en `api/app/routers/auth.py`).
+El acceso del cliente es por **cédula**. En la PWA el usuario escribe su cédula; si ya existe
+le enviamos el código al celular registrado, y si no existe se auto-registra con celular + nombre.
+Con `DEBUG=True` (y `SMS_PROVIDER=debug`) la API devuelve el codigo OTP en la respuesta
+(`debug_codigo`), util para probar el login sin SMS. En produccion se fija `DEBUG=False` y se
+configura `SMS_PROVIDER`/`SMS_API_URL` para enviar el codigo por SMS
+(punto de extension: `api/app/services/sms.py`).
 
 ### Opcion B: servicios por separado
 
@@ -86,12 +90,15 @@ python conector.py menu
 
 Prefijo `API_PREFIX=/fid-api`.
 
-- `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente.
+- `POST /fid-api/auth/identificar` — consulta si la cédula existe (y cel enmascarado).
+- `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente por cédula (auto-registro).
 - `POST /fid-api/auth/admin` — login del panel.
 - `GET  /fid-api/clientes/me`, `/me/qr`, `/me/movimientos` — datos del cliente autenticado.
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.
 - `GET  /fid-api/recompensas`, `POST /fid-api/canjes`, `GET /fid-api/canjes/mis` — recompensas y canjes.
 - `GET  /fid-api/admin/resumen|ventas|clientes|canjes|reglas|recompensas` y endpoints de gestion/reverso.
+- `POST /fid-api/admin/reglas` y `PUT /fid-api/admin/reglas/{id}` — crear y editar reglas (edicion parcial:
+  solo se pisan los campos enviados; valida nombre duplicado con 409 y `desde > hasta` con 400).
 
 Documentacion interactiva: `/docs`.
 

@@ -3,13 +3,18 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+class IdentificarIn(BaseModel):
+    cedula: str = Field(min_length=5, max_length=15)
+
+
 class OtpRequest(BaseModel):
-    telefono: str = Field(min_length=7, max_length=20)
+    cedula: str = Field(min_length=5, max_length=15)
+    telefono: str | None = Field(default=None, min_length=7, max_length=20)
     nombre: str | None = Field(default=None, max_length=120)
 
 
 class OtpVerify(BaseModel):
-    telefono: str
+    cedula: str = Field(min_length=5, max_length=15)
     codigo: str
 
 
@@ -34,6 +39,15 @@ class ReglaIn(BaseModel):
     puntos_por_litro: float = Field(ge=0)
     activa: bool = True
     prioridad: int = 0
+    desde: datetime | None = None
+    hasta: datetime | None = None
+
+
+class ReglaPatchIn(BaseModel):
+    nombre: str | None = Field(default=None, min_length=2, max_length=80)
+    puntos_por_litro: float | None = Field(default=None, ge=0)
+    activa: bool | None = None
+    prioridad: int | None = None
     desde: datetime | None = None
     hasta: datetime | None = None
 

@@ -233,6 +233,10 @@ form.fila button:hover,
   color: #fff;
 }
 
+td button + button {
+  margin-left: 0.5rem;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -289,6 +293,14 @@ tbody tr:hover td {
   color: var(--danger);
   background: #fdeced;
   border: 1px solid #f5c6c8;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.ok {
+  color: var(--green-3);
+  background: #eaf7e5;
+  border: 1px solid var(--line);
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
 }

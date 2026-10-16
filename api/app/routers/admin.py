@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, or_, select
@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import require_admin
 from ..models import Canje, Cliente, LedgerPuntos, Recompensa, Regla, Venta, utcnow
-from ..schemas import RecompensaIn, ReglaIn, ReversoIn
+from ..schemas import RecompensaIn, ReglaIn, ReglaPatchIn, ReversoIn
 from ..services import ledger
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
@@ -88,7 +88,14 @@ def listar_clientes(q: str | None = None, limite: int = 50, offset: int = 0, db:
     consulta = select(Cliente)
     if q:
         filtro = f"%{q}%"
-        consulta = consulta.where(or_(Cliente.telefono.ilike(filtro), Cliente.nombre.ilike(filtro)))
+        consulta = consulta.where(
+            or_(
+                Cliente.cedula.ilike(filtro),
+                Cliente.telefono.ilike(filtro),
+                Cliente.nombre.ilike(filtro),
+                Cliente.placa.ilike(filtro),
+            )
+        )
     total = db.scalar(select(func.count()).select_from(consulta.subquery())) or 0
     clientes = db.scalars(
         consulta.order_by(Cliente.puntos.desc()).limit(min(max(limite, 1), 200)).offset(max(offset, 0))
@@ -98,8 +105,10 @@ def listar_clientes(q: str | None = None, limite: int = 50, offset: int = 0, db:
         "clientes": [
             {
                 "id": c.id,
+                "cedula": c.cedula,
                 "telefono": c.telefono,
                 "nombre": c.nombre,
+                "placa": c.placa,
                 "puntos": c.puntos,
                 "activo": c.activo,
                 "created_at": c.created_at,
@@ -121,7 +130,14 @@ def detalle_cliente(cliente_id: int, db: Session = Depends(get_db)):
         select(Venta).where(Venta.cliente_id == cliente_id).order_by(Venta.id.desc()).limit(100)
     ).all()
     return {
-        "cliente": {"id": cliente.id, "telefono": cliente.telefono, "nombre": cliente.nombre, "puntos": cliente.puntos},
+        "cliente": {
+            "id": cliente.id,
+            "cedula": cliente.cedula,
+            "telefono": cliente.telefono,
+            "nombre": cliente.nombre,
+            "placa": cliente.placa,
+            "puntos": cliente.puntos,
+        },
         "movimientos": [
             {
                 "id": m.id,
@@ -204,11 +220,17 @@ def listar_reglas(db: Session = Depends(get_db)):
     ]
 
 
+def _validar_rango(desde: datetime | None, hasta: datetime | None) -> None:
+    if desde is not None and hasta is not None and desde > hasta:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "La fecha 'desde' no puede ser posterior a 'hasta'")
+
+
 @router.post("/reglas", status_code=status.HTTP_201_CREATED)
 def crear_regla(body: ReglaIn, db: Session = Depends(get_db)):
     existe = db.scalar(select(Regla).where(Regla.nombre == body.nombre))
     if existe is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una regla con ese nombre")
+    _validar_rango(body.desde, body.hasta)
     regla = Regla(**body.model_dump())
     db.add(regla)
     db.commit()
@@ -217,11 +239,24 @@ def crear_regla(body: ReglaIn, db: Session = Depends(get_db)):
 
 
 @router.put("/reglas/{regla_id}")
-def actualizar_regla(regla_id: int, body: ReglaIn, db: Session = Depends(get_db)):
+def actualizar_regla(regla_id: int, body: ReglaPatchIn, db: Session = Depends(get_db)):
     regla = db.get(Regla, regla_id)
     if regla is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Regla no encontrada")
-    for campo, valor in body.model_dump().items():
+
+    datos = body.model_dump(exclude_unset=True)
+    for campo in ("nombre", "puntos_por_litro", "activa", "prioridad"):
+        if datos.get(campo) is None:
+            datos.pop(campo, None)
+
+    if "nombre" in datos:
+        en_uso = db.scalar(select(Regla).where(Regla.nombre == datos["nombre"], Regla.id != regla_id))
+        if en_uso is not None:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una regla con ese nombre")
+
+    _validar_rango(datos.get("desde", regla.desde), datos.get("hasta", regla.hasta))
+
+    for campo, valor in datos.items():
         setattr(regla, campo, valor)
     db.commit()
     return {"id": regla.id, "nombre": regla.nombre, "activa": regla.activa}

@@ -44,8 +44,10 @@ def admin_headers(client):
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
-def solicitar_otp(client, telefono: str, nombre: str | None = None) -> str:
-    body = {"telefono": telefono}
+def solicitar_otp(client, cedula: str, telefono: str | None = None, nombre: str | None = None) -> str:
+    body = {"cedula": cedula}
+    if telefono:
+        body["telefono"] = telefono
     if nombre:
         body["nombre"] = nombre
     resp = client.post(f"{PREFIX}/auth/otp/request", json=body)
@@ -53,9 +55,9 @@ def solicitar_otp(client, telefono: str, nombre: str | None = None) -> str:
     return resp.json()["debug_codigo"]
 
 
-def login_cliente(client, telefono: str, nombre: str | None = None) -> dict:
-    codigo = solicitar_otp(client, telefono, nombre)
-    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"telefono": telefono, "codigo": codigo})
+def login_cliente(client, cedula: str, telefono: str | None = None, nombre: str | None = None) -> dict:
+    codigo = solicitar_otp(client, cedula, telefono, nombre)
+    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"cedula": cedula, "codigo": codigo})
     assert resp.status_code == 200, resp.text
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
@@ -67,6 +69,7 @@ def enviar_venta(
     monto: float,
     telefono: str | None = None,
     qr_payload: str | None = None,
+    placa: str | None = None,
 ):
     body = {
         "id_externo": id_externo,
@@ -75,6 +78,8 @@ def enviar_venta(
         "estacion_id": "EDS-01",
         "origen": "test",
     }
+    if placa:
+        body["placa"] = placa
     if telefono:
         body["telefono"] = telefono
     if qr_payload:

@@ -11,10 +11,16 @@ class Settings(BaseSettings):
     ADMIN_USER: str = "admin"
     ADMIN_PASSWORD: str = "admin123"
     OTP_TTL_SECONDS: int = 300
+    OTP_RATE_MAX: int = 5
+    OTP_RATE_VENTANA: int = 900
     QR_TTL_SECONDS: int = 300
     CORS_ORIGINS: str = "*"
     API_PREFIX: str = "/fid-api"
     SYNC_API_KEY: str = "dev-api-key"
+    SMS_PROVIDER: str = "debug"
+    SMS_API_URL: str = ""
+    SMS_API_KEY: str = ""
+    SMS_FROM: str = "FidelizacionGLP"
 
     @property
     def cors_list(self) -> list[str]:

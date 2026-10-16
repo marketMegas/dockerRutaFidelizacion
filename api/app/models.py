@@ -17,8 +17,10 @@ class Cliente(Base):
     __tablename__ = "clientes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cedula: Mapped[str] = mapped_column(String(15), unique=True, index=True, nullable=False)
     telefono: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     nombre: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    placa: Mapped[str | None] = mapped_column(String(10), nullable=True)
     email: Mapped[str | None] = mapped_column(String(120), nullable=True)
     puntos: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
