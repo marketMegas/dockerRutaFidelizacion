@@ -84,6 +84,7 @@ class Recompensa(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombre: Mapped[str] = mapped_column(String(120), nullable=False)
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    imagen: Mapped[str | None] = mapped_column(String(500), nullable=True)
     costo_puntos: Mapped[int] = mapped_column(Integer, nullable=False)
     stock: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

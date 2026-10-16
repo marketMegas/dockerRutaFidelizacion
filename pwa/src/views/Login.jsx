@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, setToken } from '../api.js'
+import RecompensaCard from '../components/RecompensaCard.jsx'
 
 export default function Login({ onLogin }) {
+  const [recompensas, setRecompensas] = useState([])
+  const [tasa, setTasa] = useState(0)
   const [paso, setPaso] = useState('cedula')
   const [cedula, setCedula] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -11,6 +14,11 @@ export default function Login({ onLogin }) {
   const [debug, setDebug] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
+
+  useEffect(() => {
+    api('/recompensas').then(setRecompensas).catch(() => {})
+    api('/config').then((c) => setTasa(c.puntos_por_litro)).catch(() => {})
+  }, [])
 
   async function pedirCodigo(telefonoRegistro) {
     setError('')
@@ -141,6 +149,17 @@ export default function Login({ onLogin }) {
             Cambiar cedula
           </button>
         </form>
+      )}
+
+      {recompensas.length > 0 && (
+        <section className="login-premios">
+          <h2>Recompensas</h2>
+          <div className="premios">
+            {recompensas.map((r) => (
+              <RecompensaCard key={r.id} recompensa={r} tasa={tasa} mostrarProgreso={false} sobreVerde />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   )

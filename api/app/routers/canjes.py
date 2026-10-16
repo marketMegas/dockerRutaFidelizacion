@@ -7,8 +7,18 @@ from ..deps import require_cliente
 from ..models import Canje, Cliente, Recompensa
 from ..schemas import CanjeIn
 from ..services import ledger
+from ..services.motor_de_reglas import regla_vigente
 
 router = APIRouter(tags=["canjes"])
+
+
+@router.get("/config")
+def config(db: Session = Depends(get_db)):
+    regla = regla_vigente(db)
+    return {
+        "puntos_por_litro": float(regla.puntos_por_litro) if regla is not None else 0.0,
+        "regla": regla.nombre if regla is not None else None,
+    }
 
 
 @router.get("/recompensas")
@@ -21,6 +31,7 @@ def listar_recompensas(db: Session = Depends(get_db)):
             "id": r.id,
             "nombre": r.nombre,
             "descripcion": r.descripcion,
+            "imagen": r.imagen,
             "costo_puntos": r.costo_puntos,
             "stock": r.stock,
         }

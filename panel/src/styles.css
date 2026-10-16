@@ -237,6 +237,20 @@ td button + button {
   margin-left: 0.5rem;
 }
 
+.miniatura {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #eef7ea;
+  border: 1px solid var(--line);
+}
+
+.miniatura-vacia {
+  background: repeating-linear-gradient(45deg, #eef7ea 0 6px, #e3f1dc 6px 12px);
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;

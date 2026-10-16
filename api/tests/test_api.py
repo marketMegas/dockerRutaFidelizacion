@@ -109,6 +109,21 @@ def test_placa_del_cliente(client, admin_headers):
     assert detalle.json()["cliente"]["placa"] == "AB123CD"
 
 
+def test_config_publico(client, admin_headers):
+    cfg = client.get(f"{PREFIX}/config")
+    assert cfg.status_code == 200
+    assert cfg.json()["puntos_por_litro"] == 1.0
+
+    regla_id = _crear_regla(client, admin_headers, "Doble", puntos_por_litro=2.0, prioridad=100)
+    cfg = client.get(f"{PREFIX}/config")
+    assert cfg.json()["puntos_por_litro"] == 2.0
+    assert cfg.json()["regla"] == "Doble"
+
+    client.put(f"{PREFIX}/admin/reglas/{regla_id}", json={"activa": False}, headers=admin_headers)
+    cfg = client.get(f"{PREFIX}/config")
+    assert cfg.json()["puntos_por_litro"] == 1.0
+
+
 def _crear_regla(client, admin_headers, nombre, **campos):
     body = {"nombre": nombre, "puntos_por_litro": 1.0, "prioridad": 0, "activa": True}
     body.update(campos)
@@ -229,4 +244,77 @@ def test_editar_regla_inexistente(client, admin_headers):
         f"{PREFIX}/admin/reglas/99999", json={"nombre": "Nada"}, headers=admin_headers
     )
     assert resp.status_code == 404
+
+
+def test_recompensa_con_imagen(client, admin_headers):
+    resp = client.post(
+        f"{PREFIX}/admin/recompensas",
+        json={
+            "nombre": "Cafe con imagen",
+            "descripcion": "Un cafe de la casa",
+            "imagen": "https://cdn.ejemplo.com/cafe.jpg",
+            "costo_puntos": 150,
+            "stock": 5,
+            "activa": True,
+        },
+        headers=admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    recompensa_id = resp.json()["id"]
+
+    admin = client.get(f"{PREFIX}/admin/recompensas", headers=admin_headers).json()
+    creada = next(r for r in admin if r["id"] == recompensa_id)
+    assert creada["imagen"] == "https://cdn.ejemplo.com/cafe.jpg"
+
+    publicas = client.get(f"{PREFIX}/recompensas").json()
+    publica = next(r for r in publicas if r["id"] == recompensa_id)
+    assert publica["imagen"] == "https://cdn.ejemplo.com/cafe.jpg"
+
+
+def test_recompensa_imagen_por_defecto(client, admin_headers):
+    resp = client.post(
+        f"{PREFIX}/admin/recompensas",
+        json={"nombre": "Sin imagen", "costo_puntos": 80, "stock": 3, "activa": True},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    recompensa_id = resp.json()["id"]
+
+    admin = client.get(f"{PREFIX}/admin/recompensas", headers=admin_headers).json()
+    creada = next(r for r in admin if r["id"] == recompensa_id)
+    assert creada["imagen"] is None
+
+
+def test_editar_imagen_recompensa(client, admin_headers):
+    resp = client.post(
+        f"{PREFIX}/admin/recompensas",
+        json={
+            "nombre": "Lavada con foto",
+            "imagen": "https://cdn.ejemplo.com/antes.jpg",
+            "costo_puntos": 200,
+            "stock": 4,
+            "activa": True,
+        },
+        headers=admin_headers,
+    )
+    assert resp.status_code == 201, resp.text
+    recompensa_id = resp.json()["id"]
+
+    resp = client.put(
+        f"{PREFIX}/admin/recompensas/{recompensa_id}",
+        json={
+            "nombre": "Lavada con foto",
+            "imagen": "https://cdn.ejemplo.com/despues.jpg",
+            "costo_puntos": 200,
+            "stock": 4,
+            "activa": True,
+        },
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+
+    admin = client.get(f"{PREFIX}/admin/recompensas", headers=admin_headers).json()
+    editada = next(r for r in admin if r["id"] == recompensa_id)
+    assert editada["imagen"] == "https://cdn.ejemplo.com/despues.jpg"
+
 

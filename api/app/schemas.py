@@ -55,6 +55,7 @@ class ReglaPatchIn(BaseModel):
 class RecompensaIn(BaseModel):
     nombre: str = Field(min_length=2, max_length=120)
     descripcion: str | None = None
+    imagen: str | None = Field(default=None, max_length=500)
     costo_puntos: int = Field(gt=0)
     stock: int = Field(ge=0)
     activa: bool = True

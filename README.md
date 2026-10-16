@@ -96,9 +96,14 @@ Prefijo `API_PREFIX=/fid-api`.
 - `GET  /fid-api/clientes/me`, `/me/qr`, `/me/movimientos` — datos del cliente autenticado.
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.
 - `GET  /fid-api/recompensas`, `POST /fid-api/canjes`, `GET /fid-api/canjes/mis` — recompensas y canjes.
+- `GET  /fid-api/config` — publico; tasa vigente (`puntos_por_litro`) para mostrar equivalencias en la PWA.
 - `GET  /fid-api/admin/resumen|ventas|clientes|canjes|reglas|recompensas` y endpoints de gestion/reverso.
 - `POST /fid-api/admin/reglas` y `PUT /fid-api/admin/reglas/{id}` — crear y editar reglas (edicion parcial:
   solo se pisan los campos enviados; valida nombre duplicado con 409 y `desde > hasta` con 400).
+- `POST /fid-api/admin/recompensas` y `PUT /fid-api/admin/recompensas/{id}` — crear y editar recompensas.
+  El campo `imagen` es la **URL** (max. 500) de la foto de referencia que se muestra en la tarjeta
+  de la PWA; el backend no almacena archivos, la copian/pegan en el panel. `null` muestra un
+  bloque de rayas de respaldo.
 
 Documentacion interactiva: `/docs`.
 

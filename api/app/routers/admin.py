@@ -270,6 +270,7 @@ def listar_recompensas_admin(db: Session = Depends(get_db)):
             "id": r.id,
             "nombre": r.nombre,
             "descripcion": r.descripcion,
+            "imagen": r.imagen,
             "costo_puntos": r.costo_puntos,
             "stock": r.stock,
             "activa": r.activa,
