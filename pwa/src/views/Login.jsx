@@ -91,6 +91,7 @@ export default function Login({ onLogin }) {
           <label>
             Numero de placa
             <input
+              className="entrada-placa"
               placeholder="Ej. ABC123"
               autoComplete="off"
               autoCapitalize="characters"

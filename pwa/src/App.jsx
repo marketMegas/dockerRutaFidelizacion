@@ -45,9 +45,12 @@ export default function App() {
   return (
     <div className="app">
       <header className="cabecera">
-        <div>
+        <div className="cabecera-id">
           <span className="saludo">Hola</span>
-          <strong>{cliente?.nombre || cliente?.telefono || '...'}</strong>
+          <div className="cabecera-nombre">
+            <strong>{cliente?.nombre || cliente?.telefono || '...'}</strong>
+            {cliente?.placa && <span className="placa-chip">{cliente.placa}</span>}
+          </div>
         </div>
         <div className="saldo-mini">
           <span className="saldo-mini-v">{cliente?.puntos ?? '-'}</span>
