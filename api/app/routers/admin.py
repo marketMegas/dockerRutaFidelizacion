@@ -7,13 +7,14 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import require_admin
 from ..models import Canje, Cliente, LedgerPuntos, Recompensa, Regla, Vehiculo, Venta, utcnow
-from ..schemas import RecompensaIn, ReglaIn, ReglaPatchIn, ReversoIn, VehiculoIn
-from ..security import normalizar_placa, placa_valida
+from ..schemas import ClientePatchIn, RecompensaIn, ReglaIn, ReglaPatchIn, ReversoIn, VehiculoIn
+from ..security import cedula_valida, normalizar_cedula, normalizar_placa, placa_valida
 from ..services import ledger
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
 PLACA_MSG = "Placa invalida: usa 3 letras y 3 numeros (ej. ABC123)"
+CEDULA_MSG = "Cedula invalida: ingresa solo numeros (6 a 10)"
 
 
 @router.get("/resumen")
@@ -187,6 +188,28 @@ def detalle_cliente(cliente_id: int, db: Session = Depends(get_db)):
     }
 
 
+@router.patch("/clientes/{cliente_id}")
+def actualizar_cliente(cliente_id: int, body: ClientePatchIn, db: Session = Depends(get_db)):
+    cliente = db.get(Cliente, cliente_id)
+    if cliente is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente no encontrado")
+    if body.nombre is not None:
+        nombre = body.nombre.strip()
+        if nombre:
+            cliente.nombre = nombre
+    if body.cedula is not None:
+        cedula = normalizar_cedula(body.cedula)
+        if not cedula_valida(cedula):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, CEDULA_MSG)
+        if cedula != cliente.cedula:
+            en_uso = db.scalar(select(Cliente).where(Cliente.cedula == cedula, Cliente.id != cliente_id))
+            if en_uso is not None:
+                raise HTTPException(status.HTTP_409_CONFLICT, "Esa cedula ya esta registrada")
+            cliente.cedula = cedula
+    db.commit()
+    return {"id": cliente.id, "cedula": cliente.cedula, "nombre": cliente.nombre}
+
+
 @router.post("/clientes/{cliente_id}/vehiculos", status_code=status.HTTP_201_CREATED)
 def agregar_vehiculo(cliente_id: int, body: VehiculoIn, db: Session = Depends(get_db)):
     cliente = db.get(Cliente, cliente_id)
@@ -250,13 +273,18 @@ def reversar(mov_id: int, body: ReversoIn, db: Session = Depends(get_db)):
 
 
 @router.get("/canjes")
-def listar_canjes(limite: int = 50, db: Session = Depends(get_db)):
-    canjes = db.scalars(select(Canje).order_by(Canje.id.desc()).limit(min(max(limite, 1), 200))).all()
+def listar_canjes(q: str | None = None, limite: int = 50, db: Session = Depends(get_db)):
+    consulta = select(Canje).order_by(Canje.id.desc())
+    if q:
+        consulta = consulta.join(Cliente, Canje.cliente_id == Cliente.id).where(Cliente.cedula.ilike(f"%{q}%"))
+    canjes = db.scalars(consulta.limit(min(max(limite, 1), 200))).all()
     return [
         {
             "id": c.id,
             "cliente_id": c.cliente_id,
             "cliente": c.cliente.nombre if c.cliente else None,
+            "cedula": c.cliente.cedula if c.cliente else None,
+            "placa": c.cliente.placa if c.cliente else None,
             "recompensa": c.recompensa.nombre if c.recompensa else None,
             "puntos_costo": c.puntos_costo,
             "estado": c.estado,

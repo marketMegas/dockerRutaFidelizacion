@@ -32,6 +32,11 @@ def normalizar_cedula(valor: str | None) -> str:
     return "".join(ch for ch in (valor or "") if ch.isdigit())
 
 
+def cedula_valida(valor: str | None) -> bool:
+    cedula = normalizar_cedula(valor)
+    return 6 <= len(cedula) <= 10
+
+
 def normalizar_placa(valor: str | None) -> str:
     return "".join(ch for ch in (valor or "").upper() if "A" <= ch <= "Z" or "0" <= ch <= "9")[:10]
 

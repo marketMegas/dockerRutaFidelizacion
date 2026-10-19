@@ -8,6 +8,9 @@ os.environ["ADMIN_USER"] = "admin"
 os.environ["ADMIN_PASSWORD"] = "admin123"
 os.environ["SYNC_API_KEY"] = "test-key"
 os.environ["API_PREFIX"] = "/fid-api"
+# El rate-limit del login admin es por IP; en pruebas todas comparten "testclient",
+# asi que se sube el tope para no bloquear la suite.
+os.environ["ADMIN_RATE_MAX"] = "100000"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -44,10 +47,14 @@ def admin_headers(client):
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
-def solicitar_otp(client, placa: str, telefono: str | None = None, nombre: str | None = None) -> str:
+def solicitar_otp(
+    client, placa: str, telefono: str | None = None, nombre: str | None = None, cedula: str | None = None
+) -> str:
     body = {"placa": placa}
     if telefono:
         body["telefono"] = telefono
+        # El registro exige cedula; se deriva del telefono para mantenerlo unico y estable.
+        body["cedula"] = cedula or "".join(ch for ch in telefono if ch.isdigit())
     if nombre:
         body["nombre"] = nombre
     resp = client.post(f"{PREFIX}/auth/otp/request", json=body)
@@ -55,8 +62,10 @@ def solicitar_otp(client, placa: str, telefono: str | None = None, nombre: str |
     return resp.json()["debug_codigo"]
 
 
-def login_cliente(client, placa: str, telefono: str | None = None, nombre: str | None = None) -> dict:
-    codigo = solicitar_otp(client, placa, telefono, nombre)
+def login_cliente(
+    client, placa: str, telefono: str | None = None, nombre: str | None = None, cedula: str | None = None
+) -> dict:
+    codigo = solicitar_otp(client, placa, telefono, nombre, cedula)
     resp = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": placa, "codigo": codigo})
     assert resp.status_code == 200, resp.text
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}

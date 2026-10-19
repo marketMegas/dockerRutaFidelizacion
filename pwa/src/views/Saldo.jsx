@@ -7,8 +7,8 @@ export default function Saldo({ cliente, refrescar }) {
       </div>
 
       <p className="muted">
-        Acumula puntos por cada litro que cargas y canjealos por recompensas. Identificate con
-        tu placa para sumar.
+        Acumula puntos por cada litro que cargas y canjealos por recompensas. Identificate con tu
+        placa para sumar y presenta tu cedula al reclamar.
       </p>
 
       <button className="primario" onClick={refrescar}>

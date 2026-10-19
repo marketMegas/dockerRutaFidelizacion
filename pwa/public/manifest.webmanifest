@@ -1,7 +1,7 @@
 {
   "name": "Programa: Fidelización puntos g-max",
   "short_name": "Fidelización g-max",
-  "description": "Suma puntos por tu consumo en la estacion de GLP y canjealos por recompensas.",
+  "description": "Suma puntos por tu consumo en la estacion de glp y canjealos por recompensas.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

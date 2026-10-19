@@ -70,7 +70,7 @@ switch ($Accion) {
         $placa = 'ABC123'
         $factura = "E2E-$([int](Get-Date -UFormat %s))"
 
-        $otp = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/request" -ContentType $Json -Body (@{ placa = $placa; telefono = $telefono; nombre = 'Juan E2E' } | ConvertTo-Json)
+        $otp = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/request" -ContentType $Json -Body (@{ placa = $placa; telefono = $telefono; cedula = '1098765432'; nombre = 'Juan E2E' } | ConvertTo-Json)
         Write-Host "OTP solicitado (cliente_nuevo=$($otp.cliente_nuevo), celular=$($otp.telefono_parcial))"
 
         Write-Host "Enviando venta por el conector (dentro de Docker)..."

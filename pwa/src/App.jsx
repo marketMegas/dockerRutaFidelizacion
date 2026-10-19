@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, getToken, setToken } from './api.js'
 import Navbar from './components/Navbar.jsx'
+import Sidebar from './components/Sidebar.jsx'
 import Login from './views/Login.jsx'
 import Datos from './views/Datos.jsx'
 import Saldo from './views/Saldo.jsx'
@@ -77,7 +78,7 @@ export default function App() {
   const conTabsCliente = logueado && (vista === 'datos' || vista === 'historial')
 
   return (
-    <div className={`app${conTabsCliente ? ' con-tabs' : ''}`}>
+    <div className={`app${logueado ? ' con-sidebar' : ''}${conTabsCliente ? ' con-tabs' : ''}`}>
       <Navbar
         vista={vista}
         onNavegar={setVista}
@@ -86,29 +87,37 @@ export default function App() {
         onSesion={logueado ? salir : () => setVista('inicio')}
       />
 
-      {enLogin ? (
-        seccion()
-      ) : (
-        <main className="vista">
-          {error && <p className="error">{error}</p>}
-          {logueado && (
-            <div className="saludo-bloque">
-              <div className="saludo-id">
-                <span className="saludo">Hola</span>
-                <div className="cabecera-nombre">
-                  <strong>{cliente?.nombre || cliente?.telefono || '...'}</strong>
-                  {cliente?.placas?.length > 1 ? (
-                    <span className="placa-chip">{cliente.placas.length} placas</span>
-                  ) : (
-                    cliente?.placa && <span className="placa-chip">{cliente.placa}</span>
-                  )}
+      <div className="contenido">
+        {logueado && (
+          <Sidebar cliente={cliente} vista={vista} onNavegar={setVista} onSalir={salir} />
+        )}
+
+        <div className="contenido-principal">
+          {enLogin ? (
+            seccion()
+          ) : (
+            <main className={`vista${vista === 'recompensas' ? ' vista--recompensas' : ''}`}>
+              {error && <p className="error">{error}</p>}
+              {logueado && (
+                <div className="saludo-bloque">
+                  <div className="saludo-id">
+                    <span className="saludo">Hola</span>
+                    <div className="cabecera-nombre">
+                      <strong>{cliente?.nombre || cliente?.telefono || '...'}</strong>
+                      {cliente?.placas?.length > 1 ? (
+                        <span className="placa-chip">{cliente.placas.length} placas</span>
+                      ) : (
+                        cliente?.placa && <span className="placa-chip">{cliente.placa}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+              {seccion()}
+            </main>
           )}
-          {seccion()}
-        </main>
-      )}
+        </div>
+      </div>
 
       {conTabsCliente && (
         <nav className="tabs" aria-label="Mi cuenta">

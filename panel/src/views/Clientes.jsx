@@ -6,6 +6,7 @@ export default function Clientes() {
   const [data, setData] = useState({ total: 0, clientes: [] })
   const [detalle, setDetalle] = useState(null)
   const [nuevaPlaca, setNuevaPlaca] = useState('')
+  const [nuevaCedula, setNuevaCedula] = useState('')
   const [error, setError] = useState('')
 
   function cargar() {
@@ -20,9 +21,23 @@ export default function Clientes() {
 
   async function ver(id) {
     try {
-      setDetalle(await api(`/admin/clientes/${id}`))
+      const info = await api(`/admin/clientes/${id}`)
+      setDetalle(info)
+      setNuevaCedula(info.cliente.cedula || '')
     } catch (e) {
       setError(e.message)
+    }
+  }
+
+  async function guardarCedula(e) {
+    e.preventDefault()
+    setError('')
+    try {
+      await api(`/admin/clientes/${detalle.cliente.id}`, { method: 'PATCH', body: { cedula: nuevaCedula } })
+      await ver(detalle.cliente.id)
+      cargar()
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -112,6 +127,17 @@ export default function Clientes() {
             </h3>
             <button onClick={() => setDetalle(null)}>Cerrar</button>
           </div>
+
+          <h4>Cedula</h4>
+          <form className="fila" onSubmit={guardarCedula}>
+            <input
+              inputMode="numeric"
+              placeholder="1098765432"
+              value={nuevaCedula}
+              onChange={(e) => setNuevaCedula(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+            />
+            <button type="submit">{detalle.cliente.cedula ? 'Actualizar cedula' : 'Agregar cedula'}</button>
+          </form>
 
           <h4>Placas</h4>
           <ul className="placas-cliente">

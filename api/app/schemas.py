@@ -24,6 +24,11 @@ class AdminLogin(BaseModel):
     password: str
 
 
+class ClientePatchIn(BaseModel):
+    cedula: str | None = Field(default=None, min_length=5, max_length=15)
+    nombre: str | None = Field(default=None, max_length=120)
+
+
 class VentaSync(BaseModel):
     id_externo: str = Field(min_length=1, max_length=80)
     volumen_litros: float = Field(gt=0)

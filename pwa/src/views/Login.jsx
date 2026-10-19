@@ -4,6 +4,8 @@ import RecompensaCard from '../components/RecompensaCard.jsx'
 
 const PLACA_RE = /^[A-Z]{3}[0-9]{3}$/
 const PLACA_MSG = 'La placa debe tener 3 letras y 3 numeros (ej. ABC123)'
+const CEDULA_RE = /^[0-9]{6,10}$/
+const CEDULA_MSG = 'La cedula debe tener solo numeros (6 a 10)'
 
 function formatearPlaca(valor) {
   const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -18,6 +20,7 @@ export default function Login({ onLogin }) {
   const [paso, setPaso] = useState('placa')
   const [placa, setPlaca] = useState('')
   const [telefono, setTelefono] = useState('')
+  const [cedula, setCedula] = useState('')
   const [nombre, setNombre] = useState('')
   const [codigo, setCodigo] = useState('')
   const [telefonoParcial, setTelefonoParcial] = useState('')
@@ -38,6 +41,7 @@ export default function Login({ onLogin }) {
       const body = { placa }
       if (telefonoRegistro) {
         body.telefono = telefonoRegistro
+        body.cedula = cedula
         body.nombre = nombre
       }
       const data = await api('/auth/otp/request', { method: 'POST', body })
@@ -79,6 +83,10 @@ export default function Login({ onLogin }) {
     if (!PLACA_RE.test(placa)) {
       setPaso('placa')
       setError(PLACA_MSG)
+      return
+    }
+    if (!CEDULA_RE.test(cedula)) {
+      setError(CEDULA_MSG)
       return
     }
     await pedirCodigo(telefono)
@@ -147,6 +155,17 @@ export default function Login({ onLogin }) {
               required
             />
           </label>
+          <label>
+            Numero de cedula
+            <input
+              inputMode="numeric"
+              placeholder="1098765432"
+              value={cedula}
+              onChange={(e) => setCedula(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+              required
+            />
+          </label>
+          <p className="muted">La cedula identifica tu cuenta al reclamar recompensas.</p>
           <label>
             Tu nombre
             <input placeholder="Opcional" value={nombre} onChange={(e) => setNombre(e.target.value)} />

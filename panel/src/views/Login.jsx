@@ -25,7 +25,7 @@ export default function Login({ onLogin }) {
   return (
     <div className="login">
       <form onSubmit={entrar}>
-        <h1>Panel Fidelizacion GLP</h1>
+        <h1>Panel de control Fidelización g-max</h1>
         <p className="muted">Acceso administrador</p>
         <label>
           Usuario

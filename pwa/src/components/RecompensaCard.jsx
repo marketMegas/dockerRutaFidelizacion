@@ -84,7 +84,7 @@ export default function RecompensaCard({
           <p className="premio-litros">
             {litros !== null ? (
               <>
-                Equivale a <strong>{litros} L</strong> de GLP
+                Equivale a <strong>{litros} L</strong> de glp
               </>
             ) : (
               <>Por {costo_puntos} puntos</>

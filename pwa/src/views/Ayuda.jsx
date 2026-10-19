@@ -17,7 +17,7 @@ const PREGUNTAS = [
   },
   {
     q: 'Como canjeo una recompensa?',
-    a: 'En Recompensas elige una disponible con tus puntos, toca Canjear y presenta tu placa para reclamarla.',
+    a: 'En Recompensas elige una disponible con tus puntos, toca Canjear y presenta tu cedula para reclamarla.',
   },
   {
     q: 'Puedo usar la app sin internet?',
@@ -51,7 +51,7 @@ export default function Ayuda() {
         <li>
           <div className="lista-info">
             <strong>Soporte del programa</strong>
-            <span className="muted">Informa tu placa para revisar tu cuenta mas rapido.</span>
+            <span className="muted">Informa tu cedula o placa para revisar tu cuenta mas rapido.</span>
           </div>
         </li>
       </ul>

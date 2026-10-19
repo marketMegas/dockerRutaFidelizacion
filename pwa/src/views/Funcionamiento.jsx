@@ -4,12 +4,12 @@ import { api } from '../api.js'
 const PASOS = [
   {
     n: 1,
-    t: 'Registra tu placa',
-    d: 'Entra con la placa de tu vehiculo: 3 letras y 3 numeros (ej. ABC123). Si es tu primera vez, te enviamos un codigo al celular y tu cuenta queda creada.',
+    t: 'Registra tu placa y cedula',
+    d: 'Entra con la placa de tu vehiculo (3 letras y 3 numeros, ej. ABC123) y tu cedula. Si es tu primera vez, te enviamos un codigo al celular y tu cuenta queda creada.',
   },
   {
     n: 2,
-    t: 'Carga GLP',
+    t: 'Carga glp',
     d: 'Al cargar en la estacion, la venta se asocia a tu cuenta con el telefono o la placa que registraste.',
   },
   {
@@ -20,7 +20,7 @@ const PASOS = [
   {
     n: 4,
     t: 'Canjea recompensas',
-    d: 'Cuando tengas puntos suficientes, canjea en Recompensas y presenta tu placa para reclamarla.',
+    d: 'Cuando tengas puntos suficientes, canjea en Recompensas y presenta tu cedula para reclamarla.',
   },
 ]
 
@@ -38,8 +38,8 @@ export default function Funcionamiento() {
       <h2>Funcionamiento</h2>
       <p className="muted">
         {tasa > 0
-          ? `Ganas ${tasa} punto${tasa === 1 ? '' : 's'} por cada litro de GLP.`
-          : 'Ganas puntos por cada litro de GLP que cargas.'}
+          ? `Ganas ${tasa} punto${tasa === 1 ? '' : 's'} por cada litro de glp.`
+          : 'Ganas puntos por cada litro de glp que cargas.'}
       </p>
 
       <ol className="pasos">
@@ -60,8 +60,16 @@ export default function Funcionamiento() {
       <ul className="lista">
         <li>
           <div className="lista-info">
-            <strong>Una cuenta por placa</strong>
-            <span className="muted">La placa es tu identificacion en el programa.</span>
+            <strong>Tu celular acumula, tu cedula te identifica</strong>
+            <span className="muted">
+              La cuenta y los puntos son del celular; la cedula se presenta al reclamar recompensas.
+            </span>
+          </div>
+        </li>
+        <li>
+          <div className="lista-info">
+            <strong>Varias placas, una cuenta</strong>
+            <span className="muted">Puedes registrar varias placas con el mismo celular y sumar en una sola cuenta.</span>
           </div>
         </li>
         <li>

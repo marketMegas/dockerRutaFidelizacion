@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,7 @@ from ..database import get_db
 from ..models import Cliente, Vehiculo
 from ..schemas import AdminLogin, IdentificarIn, OtpRequest, OtpVerify
 from ..security import (
+    cedula_valida,
     crear_token,
     enmascarar_telefono,
     generar_otp,
@@ -24,6 +25,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 MAX_INTENTOS = 5
 PLACA_MSG = "Placa invalida: usa 3 letras y 3 numeros (ej. ABC123)"
+CEDULA_MSG = "Cedula invalida: ingresa solo numeros (6 a 10)"
 
 
 def _vehiculo(db: Session, placa: str) -> Vehiculo | None:
@@ -43,6 +45,14 @@ def _placas(db: Session, cliente: Cliente) -> list[str]:
             .order_by(Vehiculo.id)
         ).all()
     )
+
+
+def _client_ip(request: Request) -> str:
+    # Detras del proxy (OpenLiteSpeed) la IP real llega en X-Forwarded-For.
+    reenviado = request.headers.get("x-forwarded-for", "")
+    if reenviado:
+        return reenviado.split(",")[0].strip()
+    return request.client.host if request.client else "desconocido"
 
 
 @router.post("/identificar")
@@ -70,6 +80,8 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
 
     cedula = normalizar_cedula(body.cedula) or None
+    if cedula is not None and not cedula_valida(cedula):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, CEDULA_MSG)
     telefono_nuevo = (body.telefono or "").strip()
     nombre = (body.nombre or "").strip()
 
@@ -99,10 +111,24 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
                 raise HTTPException(status.HTTP_403_FORBIDDEN, "Cliente inactivo")
             if nombre and not cliente.nombre:
                 cliente.nombre = nombre
+            if cedula is not None:
+                if cliente.cedula is None:
+                    en_uso = db.scalar(
+                        select(Cliente).where(Cliente.cedula == cedula, Cliente.id != cliente.id)
+                    )
+                    if en_uso is not None:
+                        raise HTTPException(status.HTTP_409_CONFLICT, "Esa cedula ya esta registrada")
+                    cliente.cedula = cedula
+                elif cliente.cedula != cedula:
+                    raise HTTPException(
+                        status.HTTP_409_CONFLICT, "Esa cedula no coincide con la cuenta de este celular"
+                    )
         else:
             if not telefono_nuevo:
                 raise HTTPException(status.HTTP_400_BAD_REQUEST, "Debes indicar tu numero de celular")
-            if cedula and db.scalar(select(Cliente).where(Cliente.cedula == cedula)) is not None:
+            if not cedula:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "Debes indicar tu numero de cedula")
+            if db.scalar(select(Cliente).where(Cliente.cedula == cedula)) is not None:
                 raise HTTPException(status.HTTP_409_CONFLICT, "Esa cedula ya esta registrada")
             cliente = Cliente(cedula=cedula, telefono=telefono_nuevo, nombre=nombre)
             db.add(cliente)
@@ -194,7 +220,10 @@ def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
 
 
 @router.post("/admin")
-def admin_login(body: AdminLogin):
+def admin_login(body: AdminLogin, request: Request):
+    ip = _client_ip(request)
+    if not rate_limit.permitir(f"admin:{ip}", settings.ADMIN_RATE_MAX, settings.ADMIN_RATE_VENTANA):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
     if body.usuario != settings.ADMIN_USER or body.password != settings.ADMIN_PASSWORD:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Credenciales invalidas")
     return {"access_token": crear_token(body.usuario, "admin"), "token_type": "bearer"}

@@ -33,7 +33,7 @@ export default function App() {
     <div className="layout">
       <aside className="sidebar">
         <h1 className="brand">
-          Fidelizacion <span>GLP</span>
+          Panel de control Fidelización <span>g-max</span>
         </h1>
         <nav>
           {NAV.map((n) => (

@@ -7,7 +7,7 @@ def test_flujo_completo(client, admin_headers):
     perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
     assert perfil.status_code == 200
     assert perfil.json()["placa"] == "TST101"
-    assert perfil.json()["cedula"] is None
+    assert perfil.json()["cedula"] == "3001112233"
     assert perfil.json()["telefono"] == "3001112233"
 
     venta = enviar_venta(client, "F-001", 20.0, 40000, telefono="3001112233", placa="abc123")
@@ -399,5 +399,47 @@ def test_placa_quitada_se_reactiva_al_entrar(client, admin_headers):
     verify = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": "TST115", "codigo": codigo})
     assert verify.status_code == 200, verify.text
     assert verify.json()["cliente"]["placas"] == ["TST115"]
+
+
+def test_admin_actualiza_cedula(client, admin_headers):
+    headers = login_cliente(client, "TST116", "3003334499", "E")
+    cid = client.get(f"{PREFIX}/clientes/me", headers=headers).json()["id"]
+
+    resp = client.patch(
+        f"{PREFIX}/admin/clientes/{cid}", json={"cedula": "1098765433"}, headers=admin_headers
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["cedula"] == "1098765433"
+
+    otra = login_cliente(client, "TST117", "3003334500", "F")
+    otra_cid = client.get(f"{PREFIX}/clientes/me", headers=otra).json()["id"]
+
+    duplicada = client.patch(
+        f"{PREFIX}/admin/clientes/{otra_cid}", json={"cedula": "1098765433"}, headers=admin_headers
+    )
+    assert duplicada.status_code == 409
+
+    invalida = client.patch(
+        f"{PREFIX}/admin/clientes/{otra_cid}", json={"cedula": "12345"}, headers=admin_headers
+    )
+    assert invalida.status_code == 400
+
+
+def test_admin_canjes_busca_por_cedula(client, admin_headers):
+    headers = login_cliente(client, "TST118", "3003334511", "G")
+    enviar_venta(client, "F-CD-1", 300.0, 600000, telefono="3003334511")
+
+    recompensas = client.get(f"{PREFIX}/recompensas").json()
+    cafe = next(r for r in recompensas if r["nombre"] == "Cafe gratis")
+    canje = client.post(f"{PREFIX}/canjes", json={"recompensa_id": cafe["id"]}, headers=headers)
+    assert canje.status_code == 201, canje.text
+
+    lista = client.get(f"{PREFIX}/admin/canjes?q=3003334511", headers=admin_headers)
+    assert lista.status_code == 200
+    assert len(lista.json()) == 1
+    assert lista.json()[0]["cedula"] == "3003334511"
+
+    vacio = client.get(f"{PREFIX}/admin/canjes?q=0000000000", headers=admin_headers)
+    assert vacio.json() == []
 
 

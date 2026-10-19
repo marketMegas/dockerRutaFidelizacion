@@ -4,16 +4,28 @@ import { api, fmtFecha } from '../api.js'
 export default function Reportes() {
   const [ventas, setVentas] = useState([])
   const [canjes, setCanjes] = useState([])
+  const [cedula, setCedula] = useState('')
   const [error, setError] = useState('')
+
+  function cargarCanjes(q = '') {
+    const filtro = q ? `?q=${encodeURIComponent(q)}` : ''
+    api(`/admin/canjes${filtro}`).then(setCanjes).catch((e) => setError(e.message))
+  }
 
   function cargar() {
     api('/admin/ventas?dias=14').then(setVentas).catch((e) => setError(e.message))
-    api('/admin/canjes').then(setCanjes).catch((e) => setError(e.message))
+    cargarCanjes(cedula)
   }
 
   useEffect(() => {
     cargar()
   }, [])
+
+  function buscar(e) {
+    e.preventDefault()
+    setError('')
+    cargarCanjes(cedula)
+  }
 
   async function entregar(id) {
     try {
@@ -69,11 +81,32 @@ export default function Reportes() {
       </table>
 
       <h3>Canjes recientes</h3>
+      <form className="fila" onSubmit={buscar}>
+        <input
+          inputMode="numeric"
+          placeholder="Buscar por cedula del cliente"
+          value={cedula}
+          onChange={(e) => setCedula(e.target.value.replace(/[^0-9]/g, ''))}
+        />
+        <button type="submit">Buscar</button>
+        {cedula && (
+          <button
+            type="button"
+            onClick={() => {
+              setCedula('')
+              cargarCanjes('')
+            }}
+          >
+            Limpiar
+          </button>
+        )}
+      </form>
       <table>
         <thead>
           <tr>
             <th>Fecha</th>
             <th>Cliente</th>
+            <th>Cedula</th>
             <th>Recompensa</th>
             <th>Puntos</th>
             <th>Estado</th>
@@ -85,6 +118,7 @@ export default function Reportes() {
             <tr key={c.id}>
               <td>{fmtFecha(c.created_at)}</td>
               <td>{c.cliente || '-'}</td>
+              <td>{c.cedula || '-'}</td>
               <td>{c.recompensa || '-'}</td>
               <td>{c.puntos_costo}</td>
               <td>{c.estado}</td>
@@ -95,7 +129,7 @@ export default function Reportes() {
           ))}
           {canjes.length === 0 && (
             <tr>
-              <td colSpan="6" className="muted">
+              <td colSpan="7" className="muted">
                 Sin canjes registrados
               </td>
             </tr>

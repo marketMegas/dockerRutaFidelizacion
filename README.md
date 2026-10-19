@@ -1,7 +1,8 @@
 # Sistema de Fidelizacion GLP
 
 Programa de puntos para una estacion de GLP (autogas): los clientes acumulan puntos por cada
-litro que cargan, se identifican con la placa de su vehiculo, y canjean recompensas.
+litro que cargan, se identifican con la placa de su vehiculo, y canjean recompensas presentando
+su cedula en la estacion.
 La administracion de la estacion gestiona reglas, recompensas, clientes y reportes.
 
 Pensado para desplegarse en el VPS Hostinger (AlmaLinux 9 + CyberPanel/OpenLiteSpeed) junto a
@@ -52,11 +53,14 @@ docker compose up -d --build
 El acceso del cliente es por **placa** (3 letras seguidas de 3 numeros, ej. `ABC123`, sin espacios
 ni guiones; se valida antes de registrar). En la PWA el usuario escribe la placa de su vehiculo;
 si ya existe le enviamos el codigo al celular registrado, y si no existe se auto-registra con
-celular + nombre. La cedula se conserva como dato opcional en el perfil y en el panel, pero ya
-no es la llave de acceso.
+**cedula obligatoria** + celular + nombre. La placa sirve para entrar y acumular; el
+**reclamo de recompensas se hace presentando la cedula** en la estacion (el panel busca el canje
+por cedula y lo marca entregado).
 Un mismo **numero de celular puede tener varias placas** registradas: la cuenta y el saldo de
 puntos son del celular, y cada vehiculo se asocia a esa cuenta (al iniciar sesion con la placa
 nueva o desde el panel). El historial y los canjes son unicos por cuenta.
+Los clientes creados antes de exigir cedula pueden agregarla en `Mis datos` (PWA) o desde el
+panel (`PATCH /admin/clientes/{id}`); sin cedula no pueden reclamar canjes.
 Con `DEBUG=True` (y `SMS_PROVIDER=debug`) la API devuelve el codigo OTP en la respuesta
 (`debug_codigo`), util para probar el login sin SMS. En produccion se fija `DEBUG=False` y se
 configura `SMS_PROVIDER`/`SMS_API_URL` para enviar el codigo por SMS
@@ -99,13 +103,17 @@ python conector.py menu
 Prefijo `API_PREFIX=/fid-api`.
 
 - `POST /fid-api/auth/identificar` — consulta si la placa existe (y cel enmascarado).
-- `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente por placa (auto-registro; `cedula` opcional en `otp/request`).
+- `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente por placa
+  (auto-registro; `cedula` obligatoria al crear la cuenta, validada como 6 a 10 numeros).
 - `POST /fid-api/auth/admin` — login del panel.
-- `GET  /fid-api/clientes/me`, `/me/movimientos` — datos del cliente autenticado.
+- `GET  /fid-api/clientes/me`, `/me/movimientos` — datos del cliente autenticado (`placas`, `cedula`).
+- `PATCH /fid-api/clientes/me` — el cliente agrega/actualiza su cedula (duplicada = 409).
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.
 - `GET  /fid-api/recompensas`, `POST /fid-api/canjes`, `GET /fid-api/canjes/mis` — recompensas y canjes.
 - `GET  /fid-api/config` — publico; tasa vigente (`puntos_por_litro`) para mostrar equivalencias en la PWA.
 - `GET  /fid-api/admin/resumen|ventas|clientes|canjes|reglas|recompensas` y endpoints de gestion/reverso.
+  `GET /admin/canjes?q=<cedula>` filtra los canjes por cedula del cliente.
+- `PATCH /fid-api/admin/clientes/{id}` — editar nombre/cedula del cliente desde el panel.
 - `POST /fid-api/admin/reglas` y `PUT /fid-api/admin/reglas/{id}` — crear y editar reglas (edicion parcial:
   solo se pisan los campos enviados; valida nombre duplicado con 409 y `desde > hasta` con 400).
 - `POST /fid-api/admin/recompensas` y `PUT /fid-api/admin/recompensas/{id}` — crear y editar recompensas.
@@ -147,6 +155,11 @@ Valores a cambiar antes de produccion:
 - `ADMIN_PASSWORD`: cambia el `admin123`.
 - `DEBUG=False`.
 - `ZENCILLO_MODO=simulador` al inicio.
+- `CORS_ORIGINS`: en produccion deja SOLO el dominio, p.ej.
+  `CORS_ORIGINS=https://fidelizacion.megas.com.co` (la plantilla trae ademas los puertos
+  de desarrollo).
+- `ADMIN_RATE_MAX` / `ADMIN_RATE_VENTANA`: limite de intentos de login del panel admin por IP
+  (por defecto 10 intentos / 900 s).
 
 Luego:
 
@@ -199,6 +212,7 @@ consume las ventas para calcular puntos.
 cd api && ruff check . && pytest
 ```
 
-La suite cubre el motor de reglas, el ledger (acumulacion, canje, reverso, saldo insuficiente)
-y los endpoints principales a traves de HTTP.
+La suite cubre el motor de reglas, el ledger (acumulacion, canje, reverso, saldo insuficiente),
+las cuentas multivehiculo (varias placas por celular, cedula obligatoria y su gestion) y los
+endpoints principales a traves de HTTP.
 # dockerRutaFidelizacion

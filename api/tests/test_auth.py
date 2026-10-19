@@ -13,6 +13,24 @@ def test_rate_limit_fallback_usa_memoria():
     assert not rate_limit.permitir(clave, 2, 60)
 
 
+def test_admin_login_rate_limit(client, monkeypatch):
+    from app.config import settings
+
+    rate_limit._memoria.clear()
+    rate_limit._cliente = None
+    rate_limit._inicializado = True
+    monkeypatch.setattr(settings, "ADMIN_RATE_MAX", 2)
+
+    malas = {"usuario": "admin", "password": "incorrecta"}
+    assert client.post(f"{PREFIX}/auth/admin", json=malas).status_code == 401
+    assert client.post(f"{PREFIX}/auth/admin", json=malas).status_code == 401
+    bloqueado = client.post(f"{PREFIX}/auth/admin", json=malas)
+    assert bloqueado.status_code == 429, bloqueado.text
+
+    buenas = {"usuario": "admin", "password": "admin123"}
+    assert client.post(f"{PREFIX}/auth/admin", json=buenas).status_code == 429
+
+
 def test_identificar_inexistente(client):
     resp = client.post(f"{PREFIX}/auth/identificar", json={"placa": "ZZZ901"})
     assert resp.status_code == 200, resp.text
@@ -27,7 +45,7 @@ def test_auto_registro_y_login(client):
     verify = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": "TST201", "codigo": codigo})
     assert verify.status_code == 200, verify.text
     assert verify.json()["cliente"]["placa"] == "TST201"
-    assert verify.json()["cliente"]["cedula"] is None
+    assert verify.json()["cliente"]["cedula"] == "3112223344"
     assert verify.json()["cliente"]["telefono"] == "3112223344"
 
     # segunda vez solo la placa
@@ -109,3 +127,51 @@ def test_placa_formato(client):
 
     ident = client.post(f"{PREFIX}/auth/identificar", json=body)
     assert ident.json()["existe"] is True
+
+
+def test_registro_requiere_cedula(client):
+    resp = client.post(f"{PREFIX}/auth/otp/request", json={"placa": "TST301", "telefono": "3115556677"})
+    assert resp.status_code == 400, resp.text
+    assert "cedula" in resp.json()["detail"].lower()
+
+
+def test_cedula_invalida(client):
+    for cedula in ("12345", "abcdef", "12345678901"):
+        resp = client.post(
+            f"{PREFIX}/auth/otp/request",
+            json={"placa": "TST302", "telefono": "3115556688", "cedula": cedula},
+        )
+        assert resp.status_code == 400, cedula
+        assert "cedula" in resp.json()["detail"].lower()
+
+
+def test_cedula_duplicada(client):
+    login_cliente(client, "TST303", "3115556699", "Uno")
+    resp = client.post(
+        f"{PREFIX}/auth/otp/request",
+        json={"placa": "TST304", "telefono": "3115556700", "cedula": "3115556699"},
+    )
+    assert resp.status_code == 409, resp.text
+    assert "cedula" in resp.json()["detail"].lower()
+
+
+def test_placa_nueva_con_cedula_distinta(client):
+    login_cliente(client, "TST305", "3115556711", "Cuenta")
+    resp = client.post(
+        f"{PREFIX}/auth/otp/request",
+        json={"placa": "TST306", "telefono": "3115556711", "cedula": "9999999999"},
+    )
+    assert resp.status_code == 409, resp.text
+
+
+def test_actualizar_cedula_perfil(client):
+    headers = login_cliente(client, "TST307", "3115556722", "Perfil")
+    resp = client.patch(f"{PREFIX}/clientes/me", json={"cedula": "1098765432"}, headers=headers)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["cedula"] == "1098765432"
+
+    perfil = client.get(f"{PREFIX}/clientes/me", headers=headers).json()
+    assert perfil["cedula"] == "1098765432"
+
+    invalida = client.patch(f"{PREFIX}/clientes/me", json={"cedula": "12345"}, headers=headers)
+    assert invalida.status_code == 400
