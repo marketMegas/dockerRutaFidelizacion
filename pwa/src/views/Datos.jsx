@@ -4,10 +4,9 @@ export default function Datos({ cliente, refrescar }) {
   if (!cliente) return <p className="muted">Cargando...</p>
 
   const filas = [
-    { k: 'Cedula', v: cliente.cedula },
+    { k: 'Placa', v: cliente.placa || '-' },
     { k: 'Celular', v: cliente.telefono },
     { k: 'Nombre', v: cliente.nombre || '-' },
-    { k: 'Placa', v: cliente.placa || '-' },
   ]
   if (cliente.email) filas.push({ k: 'Email', v: cliente.email })
   filas.push({ k: 'Miembro desde', v: fmtFecha(cliente.created_at) })

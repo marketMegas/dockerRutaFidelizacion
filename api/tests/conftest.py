@@ -44,8 +44,8 @@ def admin_headers(client):
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
-def solicitar_otp(client, cedula: str, telefono: str | None = None, nombre: str | None = None) -> str:
-    body = {"cedula": cedula}
+def solicitar_otp(client, placa: str, telefono: str | None = None, nombre: str | None = None) -> str:
+    body = {"placa": placa}
     if telefono:
         body["telefono"] = telefono
     if nombre:
@@ -55,9 +55,9 @@ def solicitar_otp(client, cedula: str, telefono: str | None = None, nombre: str 
     return resp.json()["debug_codigo"]
 
 
-def login_cliente(client, cedula: str, telefono: str | None = None, nombre: str | None = None) -> dict:
-    codigo = solicitar_otp(client, cedula, telefono, nombre)
-    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"cedula": cedula, "codigo": codigo})
+def login_cliente(client, placa: str, telefono: str | None = None, nombre: str | None = None) -> dict:
+    codigo = solicitar_otp(client, placa, telefono, nombre)
+    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": placa, "codigo": codigo})
     assert resp.status_code == 200, resp.text
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 

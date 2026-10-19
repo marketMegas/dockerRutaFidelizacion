@@ -5,8 +5,8 @@ import RecompensaCard from '../components/RecompensaCard.jsx'
 export default function Login({ onLogin }) {
   const [recompensas, setRecompensas] = useState([])
   const [tasa, setTasa] = useState(0)
-  const [paso, setPaso] = useState('cedula')
-  const [cedula, setCedula] = useState('')
+  const [paso, setPaso] = useState('placa')
+  const [placa, setPlaca] = useState('')
   const [telefono, setTelefono] = useState('')
   const [nombre, setNombre] = useState('')
   const [codigo, setCodigo] = useState('')
@@ -24,7 +24,7 @@ export default function Login({ onLogin }) {
     setError('')
     setCargando(true)
     try {
-      const body = { cedula }
+      const body = { placa }
       if (telefonoRegistro) {
         body.telefono = telefonoRegistro
         body.nombre = nombre
@@ -40,12 +40,12 @@ export default function Login({ onLogin }) {
     }
   }
 
-  async function consultarCedula(e) {
+  async function consultarPlaca(e) {
     e.preventDefault()
     setError('')
     setCargando(true)
     try {
-      const data = await api('/auth/identificar', { method: 'POST', body: { cedula } })
+      const data = await api('/auth/identificar', { method: 'POST', body: { placa } })
       if (data.existe) {
         await pedirCodigo()
       } else {
@@ -68,7 +68,7 @@ export default function Login({ onLogin }) {
     setError('')
     setCargando(true)
     try {
-      const data = await api('/auth/otp/verify', { method: 'POST', body: { cedula, codigo } })
+      const data = await api('/auth/otp/verify', { method: 'POST', body: { placa, codigo } })
       setToken(data.access_token)
       onLogin()
     } catch (err) {
@@ -86,15 +86,16 @@ export default function Login({ onLogin }) {
         <p>Suma puntos por cada litro que cargas y canjealos por recompensas.</p>
       </div>
 
-      {paso === 'cedula' && (
-        <form onSubmit={consultarCedula}>
+      {paso === 'placa' && (
+        <form onSubmit={consultarPlaca}>
           <label>
-            Numero de cedula
+            Numero de placa
             <input
-              inputMode="numeric"
-              placeholder="Sin puntos ni espacios"
-              value={cedula}
-              onChange={(e) => setCedula(e.target.value)}
+              placeholder="Ej. ABC123"
+              autoComplete="off"
+              autoCapitalize="characters"
+              value={placa}
+              onChange={(e) => setPlaca(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
               required
             />
           </label>
@@ -105,7 +106,7 @@ export default function Login({ onLogin }) {
 
       {paso === 'registro' && (
         <form onSubmit={registrar}>
-          <p className="muted">No encontramos tu cedula. Registrate para empezar.</p>
+          <p className="muted">No encontramos tu placa. Registrate para empezar.</p>
           <label>
             Numero de celular
             <input
@@ -122,8 +123,8 @@ export default function Login({ onLogin }) {
           </label>
           {error && <p className="error">{error}</p>}
           <button disabled={cargando}>{cargando ? 'Enviando...' : 'Recibir codigo'}</button>
-          <button type="button" className="link" onClick={() => setPaso('cedula')}>
-            Cambiar cedula
+          <button type="button" className="link" onClick={() => setPaso('placa')}>
+            Cambiar placa
           </button>
         </form>
       )}
@@ -145,8 +146,8 @@ export default function Login({ onLogin }) {
           {debug && <p className="demo">Codigo de prueba: {debug}</p>}
           {error && <p className="error">{error}</p>}
           <button disabled={cargando}>{cargando ? 'Verificando...' : 'Entrar'}</button>
-          <button type="button" className="link" onClick={() => setPaso('cedula')}>
-            Cambiar cedula
+          <button type="button" className="link" onClick={() => setPaso('placa')}>
+            Cambiar placa
           </button>
         </form>
       )}

@@ -66,12 +66,11 @@ switch ($Accion) {
     }
 
     'e2e' {
-        $cedula = '1098765432'
         $telefono = '3001234567'
         $placa = 'ABC123'
         $factura = "E2E-$([int](Get-Date -UFormat %s))"
 
-        $otp = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/request" -ContentType $Json -Body (@{ cedula = $cedula; telefono = $telefono; nombre = 'Juan E2E' } | ConvertTo-Json)
+        $otp = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/request" -ContentType $Json -Body (@{ placa = $placa; telefono = $telefono; nombre = 'Juan E2E' } | ConvertTo-Json)
         Write-Host "OTP solicitado (cliente_nuevo=$($otp.cliente_nuevo), celular=$($otp.telefono_parcial))"
 
         Write-Host "Enviando venta por el conector (dentro de Docker)..."
@@ -80,17 +79,17 @@ switch ($Accion) {
         Write-Host "Reenviando la misma factura (idempotencia)..."
         docker compose run --rm --no-deps connector python conector.py simular --litros 20 --placa $placa --telefono $telefono --factura $factura
 
-        $otp2 = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/request" -ContentType $Json -Body (@{ cedula = $cedula } | ConvertTo-Json)
-        $ver = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/verify" -ContentType $Json -Body (@{ cedula = $cedula; codigo = $otp2.debug_codigo } | ConvertTo-Json)
-        Write-Host "Saldo del cliente $($ver.cliente.cedula): $($ver.cliente.puntos) puntos"
+        $otp2 = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/request" -ContentType $Json -Body (@{ placa = $placa } | ConvertTo-Json)
+        $ver = Invoke-RestMethod -Method Post -Uri "$Base/auth/otp/verify" -ContentType $Json -Body (@{ placa = $placa; codigo = $otp2.debug_codigo } | ConvertTo-Json)
+        Write-Host "Saldo del cliente placa=$($ver.cliente.placa): $($ver.cliente.puntos) puntos"
 
         $adm = Invoke-RestMethod -Method Post -Uri "$Base/auth/admin" -ContentType $Json -Body (@{ usuario = 'admin'; password = 'admin123' } | ConvertTo-Json)
         $headers = @{ Authorization = "Bearer $($adm.access_token)" }
         $res = Invoke-RestMethod -Uri "$Base/admin/resumen" -Headers $headers
         Write-Host "Resumen -> clientes=$($res.total_clientes) ventas_hoy=$($res.ventas_hoy.cantidad) litros=$($res.ventas_hoy.litros) puntos_activos=$($res.puntos_activos)"
 
-        $cli = Invoke-RestMethod -Uri "$Base/admin/clientes?q=$cedula" -Headers $headers
-        Write-Host "Cliente -> cedula=$($cli.clientes[0].cedula) placa=$($cli.clientes[0].placa) puntos=$($cli.clientes[0].puntos)"
+        $cli = Invoke-RestMethod -Uri "$Base/admin/clientes?q=$placa" -Headers $headers
+        Write-Host "Cliente -> placa=$($cli.clientes[0].placa) cedula=$($cli.clientes[0].cedula) puntos=$($cli.clientes[0].puntos)"
     }
 
     'dev-panel' {

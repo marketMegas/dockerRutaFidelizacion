@@ -5,7 +5,9 @@ from app.services import ledger
 
 
 def _cliente(db, puntos: int = 0) -> Cliente:
-    cliente = Cliente(cedula="10999999", telefono="3000000000", nombre="Test", puntos=puntos)
+    cliente = Cliente(
+        cedula="10999999", placa="LED001", telefono="3000000000", nombre="Test", puntos=puntos
+    )
     db.add(cliente)
     db.commit()
     return cliente

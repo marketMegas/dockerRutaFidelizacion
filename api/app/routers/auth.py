@@ -8,26 +8,37 @@ from ..config import settings
 from ..database import get_db
 from ..models import Cliente
 from ..schemas import AdminLogin, IdentificarIn, OtpRequest, OtpVerify
-from ..security import crear_token, enmascarar_telefono, generar_otp, hash_otp, normalizar_cedula, utcnow
+from ..security import (
+    crear_token,
+    enmascarar_telefono,
+    generar_otp,
+    hash_otp,
+    normalizar_cedula,
+    normalizar_placa,
+    utcnow,
+)
 from ..services import rate_limit, sms
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 MAX_INTENTOS = 5
-CEDULA_MIN = 6
+PLACA_MIN = 5
 
 
-def _buscar(db: Session, cedula: str) -> Cliente | None:
-    return db.scalar(select(Cliente).where(Cliente.cedula == cedula))
+def _buscar(db: Session, placa: str) -> Cliente | None:
+    return db.scalar(select(Cliente).where(Cliente.placa == placa))
 
 
 @router.post("/identificar")
 def identificar(body: IdentificarIn, db: Session = Depends(get_db)):
-    cedula = normalizar_cedula(body.cedula)
-    if not rate_limit.permitir(f"ident:{cedula}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
+    placa = normalizar_placa(body.placa)
+    if len(placa) < PLACA_MIN:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Placa invalida")
+
+    if not rate_limit.permitir(f"ident:{placa}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
 
-    cliente = _buscar(db, cedula)
+    cliente = _buscar(db, placa)
     if cliente is None or not cliente.activo:
         return {"existe": False, "telefono_parcial": None}
     return {"existe": True, "telefono_parcial": enmascarar_telefono(cliente.telefono)}
@@ -35,14 +46,16 @@ def identificar(body: IdentificarIn, db: Session = Depends(get_db)):
 
 @router.post("/otp/request")
 def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
-    cedula = normalizar_cedula(body.cedula)
-    if len(cedula) < CEDULA_MIN:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cedula invalida")
+    placa = normalizar_placa(body.placa)
+    if len(placa) < PLACA_MIN:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Placa invalida")
 
-    if not rate_limit.permitir(f"otp:{cedula}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
+    if not rate_limit.permitir(f"otp:{placa}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
 
-    cliente = _buscar(db, cedula)
+    cedula = normalizar_cedula(body.cedula) or None
+
+    cliente = _buscar(db, placa)
     nuevo = cliente is None
 
     if nuevo:
@@ -51,7 +64,9 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Debes indicar tu numero de celular")
         if db.scalar(select(Cliente).where(Cliente.telefono == telefono)) is not None:
             raise HTTPException(status.HTTP_409_CONFLICT, "Ese celular ya esta registrado")
-        cliente = Cliente(cedula=cedula, telefono=telefono, nombre=(body.nombre or "").strip())
+        if cedula and db.scalar(select(Cliente).where(Cliente.cedula == cedula)) is not None:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Esa cedula ya esta registrada")
+        cliente = Cliente(placa=placa, cedula=cedula, telefono=telefono, nombre=(body.nombre or "").strip())
         db.add(cliente)
         db.flush()
     else:
@@ -69,7 +84,7 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
             cliente.telefono = telefono_nuevo
 
     codigo = generar_otp()
-    cliente.otp_hash = hash_otp(cedula, codigo)
+    cliente.otp_hash = hash_otp(placa, codigo)
     cliente.otp_expires_at = utcnow().replace(tzinfo=None) + timedelta(seconds=settings.OTP_TTL_SECONDS)
     cliente.otp_attempts = 0
     db.commit()
@@ -89,10 +104,10 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
 
 @router.post("/otp/verify")
 def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
-    cedula = normalizar_cedula(body.cedula)
-    cliente = _buscar(db, cedula)
+    placa = normalizar_placa(body.placa)
+    cliente = _buscar(db, placa)
     if cliente is None or cliente.otp_hash is None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No hay codigo pendiente para esta cedula")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "No hay codigo pendiente para esta placa")
 
     if cliente.otp_expires_at is None or cliente.otp_expires_at < utcnow().replace(tzinfo=None):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "El codigo expiro, solicita uno nuevo")
@@ -100,7 +115,7 @@ def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
     if cliente.otp_attempts >= MAX_INTENTOS:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, solicita un nuevo codigo")
 
-    if hash_otp(cedula, body.codigo) != cliente.otp_hash:
+    if hash_otp(placa, body.codigo) != cliente.otp_hash:
         cliente.otp_attempts += 1
         db.commit()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Codigo incorrecto")
@@ -115,6 +130,7 @@ def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "cliente": {
             "id": cliente.id,
+            "placa": cliente.placa,
             "cedula": cliente.cedula,
             "telefono": cliente.telefono,
             "nombre": cliente.nombre,

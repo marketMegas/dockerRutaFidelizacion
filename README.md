@@ -47,8 +47,10 @@ docker compose up -d --build
 - API: http://localhost:8002/health
 - Conector (opcional, perfil aparte): `docker compose --profile conector up -d`
 
-El acceso del cliente es por **cédula**. En la PWA el usuario escribe su cédula; si ya existe
-le enviamos el código al celular registrado, y si no existe se auto-registra con celular + nombre.
+El acceso del cliente es por **placa** (5 a 10 caracteres alfanumericos, sin espacios ni
+guiones). En la PWA el usuario escribe la placa de su vehiculo; si ya existe le enviamos el
+codigo al celular registrado, y si no existe se auto-registra con celular + nombre. La cedula
+se conserva como dato opcional en el perfil y en el panel, pero ya no es la llave de acceso.
 Con `DEBUG=True` (y `SMS_PROVIDER=debug`) la API devuelve el codigo OTP en la respuesta
 (`debug_codigo`), util para probar el login sin SMS. En produccion se fija `DEBUG=False` y se
 configura `SMS_PROVIDER`/`SMS_API_URL` para enviar el codigo por SMS
@@ -90,8 +92,8 @@ python conector.py menu
 
 Prefijo `API_PREFIX=/fid-api`.
 
-- `POST /fid-api/auth/identificar` — consulta si la cédula existe (y cel enmascarado).
-- `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente por cédula (auto-registro).
+- `POST /fid-api/auth/identificar` — consulta si la placa existe (y cel enmascarado).
+- `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente por placa (auto-registro; `cedula` opcional en `otp/request`).
 - `POST /fid-api/auth/admin` — login del panel.
 - `GET  /fid-api/clientes/me`, `/me/qr`, `/me/movimientos` — datos del cliente autenticado.
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.

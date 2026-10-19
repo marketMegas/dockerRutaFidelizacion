@@ -55,8 +55,8 @@ La integracion definitiva depende del modulo/API que Zencillo habilite. Pedir po
    - `volumen_lt` en litros (confirmar unidad).
    - `precio` unitario y `valor_total`.
    - `islero` / despachador (opcional, para auditoria).
-   - Identificacion del cliente si Zencillo la captura (cedula/telefono) — opcional,
-     normalmente el cliente se identifica en la PWA con QR/telefono.
+   - Identificacion del cliente si Zencillo la captura (telefono) — opcional,
+     normalmente el cliente se identifica en la PWA con su placa/QR/telefono.
 5. **Webhooks**: si ofrecen notificacion push de venta (mejor que polling), pedir contrato.
 6. **Ambiente de pruebas** y limites de peticiones.
 

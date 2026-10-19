@@ -6,7 +6,7 @@ from ..config import settings
 from ..database import get_db
 from ..models import Cliente, Venta
 from ..schemas import VentaSync
-from ..security import verificar_qr
+from ..security import normalizar_placa, verificar_qr
 from ..services import ledger
 from ..services.motor_de_reglas import calcular_puntos
 
@@ -57,8 +57,13 @@ def sincronizar_venta(
         }
 
     cliente = _resolver_cliente(db, body)
-    if body.placa:
-        cliente.placa = body.placa.strip().upper()[:10]
+    placa = normalizar_placa(body.placa)
+    if placa and placa != "SINPLACA":
+        en_uso = db.scalar(
+            select(Cliente).where(Cliente.placa == placa, Cliente.id != cliente.id)
+        )
+        if en_uso is None:
+            cliente.placa = placa
 
     puntos, regla = calcular_puntos(db, body.volumen_litros)
     venta = Venta(
@@ -66,7 +71,7 @@ def sincronizar_venta(
         volumen_litros=body.volumen_litros,
         monto=body.monto,
         puntos_otorgados=puntos,
-        placa=body.placa,
+        placa=placa or None,
         estacion_id=body.estacion_id,
         origen=body.origen,
         regla_id=regla.id if regla else None,

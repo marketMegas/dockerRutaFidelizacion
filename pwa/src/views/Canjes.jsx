@@ -29,7 +29,7 @@ export default function Canjes({ cliente, refrescar }) {
     setMensaje('')
     try {
       const res = await api('/canjes', { method: 'POST', body: { recompensa_id: r.id } })
-      setMensaje(`Canjeaste ${res.recompensa}. Presenta tu cedula para reclamarla.`)
+      setMensaje(`Canjeaste ${res.recompensa}. Presenta tu placa para reclamarla.`)
       await refrescar()
       cargar()
     } catch (e) {

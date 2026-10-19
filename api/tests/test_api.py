@@ -2,11 +2,12 @@ from tests.conftest import PREFIX, enviar_venta, login_cliente, solicitar_otp
 
 
 def test_flujo_completo(client, admin_headers):
-    headers = login_cliente(client, "10101001", "3001112233", "Juan Perez")
+    headers = login_cliente(client, "TST1001", "3001112233", "Juan Perez")
 
     perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
     assert perfil.status_code == 200
-    assert perfil.json()["cedula"] == "10101001"
+    assert perfil.json()["placa"] == "TST1001"
+    assert perfil.json()["cedula"] is None
     assert perfil.json()["telefono"] == "3001112233"
 
     venta = enviar_venta(client, "F-001", 20.0, 40000, telefono="3001112233", placa="abc123")
@@ -32,7 +33,7 @@ def test_flujo_completo(client, admin_headers):
 
 
 def test_qr_y_venta_por_qr(client):
-    headers = login_cliente(client, "10101002", "3009998877", "Maria")
+    headers = login_cliente(client, "TST1002", "3009998877", "Maria")
 
     qr = client.get(f"{PREFIX}/clientes/me/qr", headers=headers)
     assert qr.status_code == 200
@@ -44,13 +45,13 @@ def test_qr_y_venta_por_qr(client):
 
 
 def test_qr_invalido_rechazado(client):
-    login_cliente(client, "10101003", "3005556677")
+    login_cliente(client, "TST1003", "3005556677")
     resp = enviar_venta(client, "F-QR-BAD", 10.0, 20000, qr_payload="invalido.firma")
     assert resp.status_code == 400
 
 
 def test_sync_requiere_api_key(client):
-    login_cliente(client, "10101004", "3007778899")
+    login_cliente(client, "TST1004", "3007778899")
     resp = client.post(
         f"{PREFIX}/sync/venta",
         json={"id_externo": "F-NOKEY", "volumen_litros": 5, "monto": 10000, "telefono": "3007778899"},
@@ -60,7 +61,7 @@ def test_sync_requiere_api_key(client):
 
 
 def test_canje_y_reversion_admin(client, admin_headers):
-    headers = login_cliente(client, "10101005", "3001234567", "Pedro")
+    headers = login_cliente(client, "TST1005", "3001234567", "Pedro")
     enviar_venta(client, "F-100", 300.0, 600000, telefono="3001234567")
 
     recompensas = client.get(f"{PREFIX}/recompensas").json()
@@ -87,13 +88,13 @@ def test_admin_protegido(client):
 
 
 def test_otp_incorrecto(client):
-    solicitar_otp(client, "10101006", "3000001111")
-    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"cedula": "10101006", "codigo": "000000"})
+    solicitar_otp(client, "TST1006", "3000001111")
+    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": "TST1006", "codigo": "000000"})
     assert resp.status_code == 400
 
 
 def test_placa_del_cliente(client, admin_headers):
-    login_cliente(client, "10101007", "3006665555", "Raul")
+    login_cliente(client, "TST1007", "3006665555", "Raul")
     venta = enviar_venta(client, "F-PL-1", 12.5, 25000, telefono="3006665555", placa="ab123cd")
     assert venta.status_code == 200, venta.text
 

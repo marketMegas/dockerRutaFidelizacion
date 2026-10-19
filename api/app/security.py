@@ -34,6 +34,10 @@ def normalizar_cedula(valor: str | None) -> str:
     return "".join(ch for ch in (valor or "") if ch.isdigit())
 
 
+def normalizar_placa(valor: str | None) -> str:
+    return "".join(ch for ch in (valor or "").upper() if "A" <= ch <= "Z" or "0" <= ch <= "9")[:10]
+
+
 def enmascarar_telefono(telefono: str | None) -> str:
     limpio = (telefono or "").strip()
     if len(limpio) <= 4:
