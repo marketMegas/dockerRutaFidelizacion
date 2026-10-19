@@ -39,3 +39,6 @@ connector-zencillo/datos/
 backups/
 *.dump
 *.sql
+
+# Archivos de quoder
+.quoder
