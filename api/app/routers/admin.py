@@ -6,11 +6,14 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import require_admin
-from ..models import Canje, Cliente, LedgerPuntos, Recompensa, Regla, Venta, utcnow
-from ..schemas import RecompensaIn, ReglaIn, ReglaPatchIn, ReversoIn
+from ..models import Canje, Cliente, LedgerPuntos, Recompensa, Regla, Vehiculo, Venta, utcnow
+from ..schemas import RecompensaIn, ReglaIn, ReglaPatchIn, ReversoIn, VehiculoIn
+from ..security import normalizar_placa, placa_valida
 from ..services import ledger
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+
+PLACA_MSG = "Placa invalida: usa 3 letras y 3 numeros (ej. ABC123)"
 
 
 @router.get("/resumen")
@@ -88,18 +91,29 @@ def listar_clientes(q: str | None = None, limite: int = 50, offset: int = 0, db:
     consulta = select(Cliente)
     if q:
         filtro = f"%{q}%"
+        placas_match = select(Vehiculo.cliente_id).where(Vehiculo.placa.ilike(filtro))
         consulta = consulta.where(
             or_(
                 Cliente.cedula.ilike(filtro),
                 Cliente.telefono.ilike(filtro),
                 Cliente.nombre.ilike(filtro),
                 Cliente.placa.ilike(filtro),
+                Cliente.id.in_(placas_match),
             )
         )
     total = db.scalar(select(func.count()).select_from(consulta.subquery())) or 0
     clientes = db.scalars(
         consulta.order_by(Cliente.puntos.desc()).limit(min(max(limite, 1), 200)).offset(max(offset, 0))
     ).all()
+    por_cliente: dict[int, list[str]] = {}
+    ids = [c.id for c in clientes]
+    if ids:
+        for v in db.scalars(
+            select(Vehiculo)
+            .where(Vehiculo.cliente_id.in_(ids), Vehiculo.activo.is_(True))
+            .order_by(Vehiculo.id)
+        ).all():
+            por_cliente.setdefault(v.cliente_id, []).append(v.placa)
     return {
         "total": total,
         "clientes": [
@@ -109,6 +123,7 @@ def listar_clientes(q: str | None = None, limite: int = 50, offset: int = 0, db:
                 "telefono": c.telefono,
                 "nombre": c.nombre,
                 "placa": c.placa,
+                "placas": por_cliente.get(c.id, []),
                 "puntos": c.puntos,
                 "activo": c.activo,
                 "created_at": c.created_at,
@@ -129,6 +144,11 @@ def detalle_cliente(cliente_id: int, db: Session = Depends(get_db)):
     ventas = db.scalars(
         select(Venta).where(Venta.cliente_id == cliente_id).order_by(Venta.id.desc()).limit(100)
     ).all()
+    vehiculos = db.scalars(
+        select(Vehiculo)
+        .where(Vehiculo.cliente_id == cliente_id, Vehiculo.activo.is_(True))
+        .order_by(Vehiculo.id)
+    ).all()
     return {
         "cliente": {
             "id": cliente.id,
@@ -136,6 +156,7 @@ def detalle_cliente(cliente_id: int, db: Session = Depends(get_db)):
             "telefono": cliente.telefono,
             "nombre": cliente.nombre,
             "placa": cliente.placa,
+            "placas": [{"id": v.id, "placa": v.placa, "created_at": v.created_at} for v in vehiculos],
             "puntos": cliente.puntos,
         },
         "movimientos": [
@@ -164,6 +185,58 @@ def detalle_cliente(cliente_id: int, db: Session = Depends(get_db)):
             for v in ventas
         ],
     }
+
+
+@router.post("/clientes/{cliente_id}/vehiculos", status_code=status.HTTP_201_CREATED)
+def agregar_vehiculo(cliente_id: int, body: VehiculoIn, db: Session = Depends(get_db)):
+    cliente = db.get(Cliente, cliente_id)
+    if cliente is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente no encontrado")
+
+    placa = normalizar_placa(body.placa)
+    if not placa_valida(placa):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, PLACA_MSG)
+
+    existente = db.scalar(select(Vehiculo).where(Vehiculo.placa == placa))
+    if existente is not None:
+        if existente.cliente_id != cliente_id:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Esa placa ya esta registrada en otra cuenta")
+        if existente.activo:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Esa placa ya esta asociada a este cliente")
+        existente.activo = True
+        cliente.placa = placa
+        db.commit()
+        return {"id": existente.id, "placa": existente.placa}
+
+    vehiculo = Vehiculo(cliente_id=cliente_id, placa=placa)
+    db.add(vehiculo)
+    cliente.placa = placa
+    db.commit()
+    db.refresh(vehiculo)
+    return {"id": vehiculo.id, "placa": vehiculo.placa}
+
+
+@router.delete("/clientes/{cliente_id}/vehiculos/{vehiculo_id}")
+def quitar_vehiculo(cliente_id: int, vehiculo_id: int, db: Session = Depends(get_db)):
+    vehiculo = db.get(Vehiculo, vehiculo_id)
+    if vehiculo is None or vehiculo.cliente_id != cliente_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vehiculo no encontrado")
+
+    vehiculo.activo = False
+    cliente = db.get(Cliente, cliente_id)
+    if cliente is not None and cliente.placa == vehiculo.placa:
+        otra = db.scalar(
+            select(Vehiculo)
+            .where(
+                Vehiculo.cliente_id == cliente_id,
+                Vehiculo.id != vehiculo_id,
+                Vehiculo.activo.is_(True),
+            )
+            .order_by(Vehiculo.id)
+        )
+        cliente.placa = otra.placa if otra is not None else None
+    db.commit()
+    return {"ok": True, "vehiculo_id": vehiculo.id}
 
 
 @router.post("/movimientos/{mov_id}/reverso")

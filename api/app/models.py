@@ -20,16 +20,30 @@ class Cliente(Base):
     cedula: Mapped[str | None] = mapped_column(String(15), unique=True, index=True, nullable=True)
     telefono: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     nombre: Mapped[str] = mapped_column(String(120), default="", nullable=False)
-    placa: Mapped[str] = mapped_column(String(10), unique=True, index=True, nullable=False)
+    placa: Mapped[str | None] = mapped_column(String(10), unique=True, index=True, nullable=True)
     email: Mapped[str | None] = mapped_column(String(120), nullable=True)
     puntos: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     otp_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
     otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     otp_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    otp_placa_pendiente: Mapped[str | None] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
 
     movimientos: Mapped[list["LedgerPuntos"]] = relationship(back_populates="cliente")
+    vehiculos: Mapped[list["Vehiculo"]] = relationship(back_populates="cliente")
+
+
+class Vehiculo(Base):
+    __tablename__ = "vehiculos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cliente_id: Mapped[int] = mapped_column(ForeignKey("clientes.id"), index=True, nullable=False)
+    placa: Mapped[str] = mapped_column(String(10), unique=True, index=True, nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
+
+    cliente: Mapped["Cliente"] = relationship(back_populates="vehiculos")
 
 
 class Venta(Base):

@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react'
 import { api, setToken } from '../api.js'
 import RecompensaCard from '../components/RecompensaCard.jsx'
 
+const PLACA_RE = /^[A-Z]{3}[0-9]{3}$/
+const PLACA_MSG = 'La placa debe tener 3 letras y 3 numeros (ej. ABC123)'
+
+function formatearPlaca(valor) {
+  const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const letras = limpio.replace(/[0-9]/g, '').slice(0, 3)
+  const numeros = limpio.replace(/[A-Z]/g, '').slice(0, 3)
+  return letras + numeros
+}
+
 export default function Login({ onLogin }) {
   const [recompensas, setRecompensas] = useState([])
   const [tasa, setTasa] = useState(0)
@@ -11,6 +21,7 @@ export default function Login({ onLogin }) {
   const [nombre, setNombre] = useState('')
   const [codigo, setCodigo] = useState('')
   const [telefonoParcial, setTelefonoParcial] = useState('')
+  const [aviso, setAviso] = useState('')
   const [debug, setDebug] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -32,6 +43,7 @@ export default function Login({ onLogin }) {
       const data = await api('/auth/otp/request', { method: 'POST', body })
       setTelefonoParcial(data.telefono_parcial || '')
       setDebug(data.debug_codigo || '')
+      setAviso(data.placa_nueva && !data.cliente_nuevo ? 'Agregaremos esta placa a tu cuenta.' : '')
       setPaso('codigo')
     } catch (err) {
       setError(err.message)
@@ -42,6 +54,10 @@ export default function Login({ onLogin }) {
 
   async function consultarPlaca(e) {
     e.preventDefault()
+    if (!PLACA_RE.test(placa)) {
+      setError(PLACA_MSG)
+      return
+    }
     setError('')
     setCargando(true)
     try {
@@ -60,6 +76,11 @@ export default function Login({ onLogin }) {
 
   async function registrar(e) {
     e.preventDefault()
+    if (!PLACA_RE.test(placa)) {
+      setPaso('placa')
+      setError(PLACA_MSG)
+      return
+    }
     await pedirCodigo(telefono)
   }
 
@@ -81,8 +102,10 @@ export default function Login({ onLogin }) {
   return (
     <div className="login">
       <div className="login-hero">
-        <div className="llama" />
-        <h1>GasLP Puntos</h1>
+        <h1>
+          <span className="login-hero-label">Programa:</span>
+          Fidelización puntos g-max
+        </h1>
         <p>Suma puntos por cada litro que cargas y canjealos por recompensas.</p>
       </div>
 
@@ -92,14 +115,20 @@ export default function Login({ onLogin }) {
             Numero de placa
             <input
               className="entrada-placa"
-              placeholder="Ej. ABC123"
+              placeholder="ABC123"
               autoComplete="off"
               autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={6}
+              pattern="[A-Za-z]{3}[0-9]{3}"
+              title="3 letras y 3 numeros (ej. ABC123)"
+              aria-invalid={placa.length > 0 && !PLACA_RE.test(placa)}
               value={placa}
-              onChange={(e) => setPlaca(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+              onChange={(e) => setPlaca(formatearPlaca(e.target.value))}
               required
             />
           </label>
+          <p className="muted">Formato: 3 letras y 3 numeros (ABC123)</p>
           {error && <p className="error">{error}</p>}
           <button disabled={cargando}>{cargando ? 'Consultando...' : 'Continuar'}</button>
         </form>
@@ -133,6 +162,7 @@ export default function Login({ onLogin }) {
       {paso === 'codigo' && (
         <form onSubmit={verificar}>
           <p className="muted">Enviamos un codigo al celular {telefonoParcial}.</p>
+          {aviso && <p className="ok">{aviso}</p>}
           <label>
             Codigo de verificacion
             <input

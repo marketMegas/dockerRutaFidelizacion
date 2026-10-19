@@ -65,5 +65,9 @@ class CanjeIn(BaseModel):
     recompensa_id: int
 
 
+class VehiculoIn(BaseModel):
+    placa: str = Field(min_length=1, max_length=20)
+
+
 class ReversoIn(BaseModel):
     motivo: str = "reverso manual"

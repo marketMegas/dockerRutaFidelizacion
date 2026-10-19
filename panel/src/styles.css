@@ -4,7 +4,7 @@
   --green: #5fbd44;
   --green-2: #4aa036;
   --green-3: #3c8a2c;
-  --orange: #f68811;
+  --orange: #ff9842;
   --orange-2: #d9780c;
   --bg: #ffffff;
   --panel: #ffffff;
@@ -337,6 +337,37 @@ tbody tr:hover td {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 2px solid var(--line);
+}
+
+.placas-cliente {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.placas-cliente li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #e3f1dc;
+  border-radius: 999px;
+  padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.placas-cliente li button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.placas-cliente li button:hover {
+  color: #c0392b;
 }
 
 .barra {

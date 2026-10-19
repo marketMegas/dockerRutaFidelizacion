@@ -1,12 +1,12 @@
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..models import Cliente
+from ..models import Cliente, Vehiculo
 from ..schemas import AdminLogin, IdentificarIn, OtpRequest, OtpVerify
 from ..security import (
     crear_token,
@@ -15,6 +15,7 @@ from ..security import (
     hash_otp,
     normalizar_cedula,
     normalizar_placa,
+    placa_valida,
     utcnow,
 )
 from ..services import rate_limit, sms
@@ -22,18 +23,33 @@ from ..services import rate_limit, sms
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 MAX_INTENTOS = 5
-PLACA_MIN = 5
+PLACA_MSG = "Placa invalida: usa 3 letras y 3 numeros (ej. ABC123)"
+
+
+def _vehiculo(db: Session, placa: str) -> Vehiculo | None:
+    return db.scalar(select(Vehiculo).where(Vehiculo.placa == placa, Vehiculo.activo.is_(True)))
 
 
 def _buscar(db: Session, placa: str) -> Cliente | None:
-    return db.scalar(select(Cliente).where(Cliente.placa == placa))
+    vehiculo = _vehiculo(db, placa)
+    return vehiculo.cliente if vehiculo is not None else None
+
+
+def _placas(db: Session, cliente: Cliente) -> list[str]:
+    return list(
+        db.scalars(
+            select(Vehiculo.placa)
+            .where(Vehiculo.cliente_id == cliente.id, Vehiculo.activo.is_(True))
+            .order_by(Vehiculo.id)
+        ).all()
+    )
 
 
 @router.post("/identificar")
 def identificar(body: IdentificarIn, db: Session = Depends(get_db)):
     placa = normalizar_placa(body.placa)
-    if len(placa) < PLACA_MIN:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Placa invalida")
+    if not placa_valida(placa):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, PLACA_MSG)
 
     if not rate_limit.permitir(f"ident:{placa}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
@@ -47,34 +63,26 @@ def identificar(body: IdentificarIn, db: Session = Depends(get_db)):
 @router.post("/otp/request")
 def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
     placa = normalizar_placa(body.placa)
-    if len(placa) < PLACA_MIN:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Placa invalida")
+    if not placa_valida(placa):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, PLACA_MSG)
 
     if not rate_limit.permitir(f"otp:{placa}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
 
     cedula = normalizar_cedula(body.cedula) or None
+    telefono_nuevo = (body.telefono or "").strip()
+    nombre = (body.nombre or "").strip()
 
-    cliente = _buscar(db, placa)
-    nuevo = cliente is None
+    vehiculo = _vehiculo(db, placa)
+    cliente = vehiculo.cliente if vehiculo is not None else None
+    nuevo_cliente = False
+    placa_nueva = vehiculo is None
 
-    if nuevo:
-        telefono = (body.telefono or "").strip()
-        if not telefono:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Debes indicar tu numero de celular")
-        if db.scalar(select(Cliente).where(Cliente.telefono == telefono)) is not None:
-            raise HTTPException(status.HTTP_409_CONFLICT, "Ese celular ya esta registrado")
-        if cedula and db.scalar(select(Cliente).where(Cliente.cedula == cedula)) is not None:
-            raise HTTPException(status.HTTP_409_CONFLICT, "Esa cedula ya esta registrada")
-        cliente = Cliente(placa=placa, cedula=cedula, telefono=telefono, nombre=(body.nombre or "").strip())
-        db.add(cliente)
-        db.flush()
-    else:
+    if cliente is not None:
         if not cliente.activo:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Cliente inactivo")
-        if body.nombre:
-            cliente.nombre = body.nombre.strip()
-        telefono_nuevo = (body.telefono or "").strip()
+        if nombre:
+            cliente.nombre = nombre
         if telefono_nuevo and telefono_nuevo != cliente.telefono:
             en_uso = db.scalar(
                 select(Cliente).where(Cliente.telefono == telefono_nuevo, Cliente.id != cliente.id)
@@ -82,6 +90,30 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
             if en_uso is not None:
                 raise HTTPException(status.HTTP_409_CONFLICT, "Ese celular ya esta registrado")
             cliente.telefono = telefono_nuevo
+    else:
+        # Placa nueva: puede ser un cliente nuevo o una placa nueva de un celular ya registrado
+        if telefono_nuevo:
+            cliente = db.scalar(select(Cliente).where(Cliente.telefono == telefono_nuevo))
+        if cliente is not None:
+            if not cliente.activo:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, "Cliente inactivo")
+            if nombre and not cliente.nombre:
+                cliente.nombre = nombre
+        else:
+            if not telefono_nuevo:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "Debes indicar tu numero de celular")
+            if cedula and db.scalar(select(Cliente).where(Cliente.cedula == cedula)) is not None:
+                raise HTTPException(status.HTTP_409_CONFLICT, "Esa cedula ya esta registrada")
+            cliente = Cliente(cedula=cedula, telefono=telefono_nuevo, nombre=nombre)
+            db.add(cliente)
+            db.flush()
+            nuevo_cliente = True
+        cliente.otp_placa_pendiente = placa
+        db.execute(
+            update(Cliente)
+            .where(Cliente.otp_placa_pendiente == placa, Cliente.id != cliente.id)
+            .values(otp_placa_pendiente=None, otp_hash=None, otp_expires_at=None)
+        )
 
     codigo = generar_otp()
     cliente.otp_hash = hash_otp(placa, codigo)
@@ -93,7 +125,8 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
 
     respuesta = {
         "ok": True,
-        "cliente_nuevo": nuevo,
+        "cliente_nuevo": nuevo_cliente,
+        "placa_nueva": placa_nueva,
         "telefono_parcial": enmascarar_telefono(cliente.telefono),
         "expira_en_segundos": settings.OTP_TTL_SECONDS,
     }
@@ -105,8 +138,17 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
 @router.post("/otp/verify")
 def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
     placa = normalizar_placa(body.placa)
-    cliente = _buscar(db, placa)
-    if cliente is None or cliente.otp_hash is None:
+    if not placa_valida(placa):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, PLACA_MSG)
+
+    vehiculo = _vehiculo(db, placa)
+    if vehiculo is not None:
+        cliente = vehiculo.cliente
+    else:
+        cliente = db.scalar(
+            select(Cliente).where(Cliente.otp_placa_pendiente == placa, Cliente.otp_hash.is_not(None))
+        )
+    if cliente is None or cliente.otp_hash is None or not cliente.activo:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "No hay codigo pendiente para esta placa")
 
     if cliente.otp_expires_at is None or cliente.otp_expires_at < utcnow().replace(tzinfo=None):
@@ -120,9 +162,20 @@ def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
         db.commit()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Codigo incorrecto")
 
+    if vehiculo is None:
+        otro = db.scalar(select(Vehiculo).where(Vehiculo.placa == placa))
+        if otro is not None and otro.cliente_id != cliente.id:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Esa placa ya esta registrada en otra cuenta")
+        if otro is None:
+            db.add(Vehiculo(cliente_id=cliente.id, placa=placa))
+        elif not otro.activo:
+            otro.activo = True
+
+    cliente.placa = placa
     cliente.otp_hash = None
     cliente.otp_expires_at = None
     cliente.otp_attempts = 0
+    cliente.otp_placa_pendiente = None
     db.commit()
 
     return {
@@ -135,6 +188,7 @@ def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
             "telefono": cliente.telefono,
             "nombre": cliente.nombre,
             "puntos": cliente.puntos,
+            "placas": _placas(db, cliente),
         },
     }
 

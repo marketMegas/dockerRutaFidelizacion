@@ -1,4 +1,4 @@
-const CACHE = 'fid-glp-v9'
+const CACHE = 'fid-glp-v11'
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.png']
 
 self.addEventListener('install', (e) => {

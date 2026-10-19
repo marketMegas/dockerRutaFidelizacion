@@ -42,15 +42,21 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- PWA cliente: http://localhost:5140 — pestañas: `Mis datos` (primera), `Saldo`, `Historial`, `Recompensas`
+- PWA cliente: http://localhost:5140 — barra superior con logo y secciones `Inicio`, `Funcionamiento`,
+  `Recompensas`, `Ayuda`; con sesion activa el boton cambia a `Salir` y aparece la barra inferior
+  `Mis datos` / `Historial`
 - Panel admin: http://localhost:5139/panel/  (usuario `admin` / `admin123` por defecto)
 - API: http://localhost:8002/health
 - Conector (opcional, perfil aparte): `docker compose --profile conector up -d`
 
-El acceso del cliente es por **placa** (5 a 10 caracteres alfanumericos, sin espacios ni
-guiones). En la PWA el usuario escribe la placa de su vehiculo; si ya existe le enviamos el
-codigo al celular registrado, y si no existe se auto-registra con celular + nombre. La cedula
-se conserva como dato opcional en el perfil y en el panel, pero ya no es la llave de acceso.
+El acceso del cliente es por **placa** (3 letras seguidas de 3 numeros, ej. `ABC123`, sin espacios
+ni guiones; se valida antes de registrar). En la PWA el usuario escribe la placa de su vehiculo;
+si ya existe le enviamos el codigo al celular registrado, y si no existe se auto-registra con
+celular + nombre. La cedula se conserva como dato opcional en el perfil y en el panel, pero ya
+no es la llave de acceso.
+Un mismo **numero de celular puede tener varias placas** registradas: la cuenta y el saldo de
+puntos son del celular, y cada vehiculo se asocia a esa cuenta (al iniciar sesion con la placa
+nueva o desde el panel). El historial y los canjes son unicos por cuenta.
 Con `DEBUG=True` (y `SMS_PROVIDER=debug`) la API devuelve el codigo OTP en la respuesta
 (`debug_codigo`), util para probar el login sin SMS. En produccion se fija `DEBUG=False` y se
 configura `SMS_PROVIDER`/`SMS_API_URL` para enviar el codigo por SMS

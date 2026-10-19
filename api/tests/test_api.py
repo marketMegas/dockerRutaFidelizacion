@@ -2,11 +2,11 @@ from tests.conftest import PREFIX, enviar_venta, login_cliente, solicitar_otp
 
 
 def test_flujo_completo(client, admin_headers):
-    headers = login_cliente(client, "TST1001", "3001112233", "Juan Perez")
+    headers = login_cliente(client, "TST101", "3001112233", "Juan Perez")
 
     perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
     assert perfil.status_code == 200
-    assert perfil.json()["placa"] == "TST1001"
+    assert perfil.json()["placa"] == "TST101"
     assert perfil.json()["cedula"] is None
     assert perfil.json()["telefono"] == "3001112233"
 
@@ -33,7 +33,7 @@ def test_flujo_completo(client, admin_headers):
 
 
 def test_sync_requiere_api_key(client):
-    login_cliente(client, "TST1004", "3007778899")
+    login_cliente(client, "TST104", "3007778899")
     resp = client.post(
         f"{PREFIX}/sync/venta",
         json={"id_externo": "F-NOKEY", "volumen_litros": 5, "monto": 10000, "telefono": "3007778899"},
@@ -57,7 +57,7 @@ def test_endpoint_qr_no_existe(client):
 
 
 def test_canje_y_reversion_admin(client, admin_headers):
-    headers = login_cliente(client, "TST1005", "3001234567", "Pedro")
+    headers = login_cliente(client, "TST105", "3001234567", "Pedro")
     enviar_venta(client, "F-100", 300.0, 600000, telefono="3001234567")
 
     recompensas = client.get(f"{PREFIX}/recompensas").json()
@@ -84,26 +84,41 @@ def test_admin_protegido(client):
 
 
 def test_otp_incorrecto(client):
-    solicitar_otp(client, "TST1006", "3000001111")
-    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": "TST1006", "codigo": "000000"})
+    solicitar_otp(client, "TST106", "3000001111")
+    resp = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": "TST106", "codigo": "000000"})
     assert resp.status_code == 400
 
 
 def test_placa_del_cliente(client, admin_headers):
-    login_cliente(client, "TST1007", "3006665555", "Raul")
-    venta = enviar_venta(client, "F-PL-1", 12.5, 25000, telefono="3006665555", placa="ab123cd")
+    login_cliente(client, "TST107", "3006665555", "Raul")
+    venta = enviar_venta(client, "F-PL-1", 12.5, 25000, telefono="3006665555", placa="abc456")
     assert venta.status_code == 200, venta.text
 
-    lista = client.get(f"{PREFIX}/admin/clientes?q=ab123cd", headers=admin_headers)
+    lista = client.get(f"{PREFIX}/admin/clientes?q=abc456", headers=admin_headers)
     assert lista.status_code == 200
     assert lista.json()["total"] == 1
-    assert lista.json()["clientes"][0]["placa"] == "AB123CD"
+    assert lista.json()["clientes"][0]["placa"] == "ABC456"
 
     detalle = client.get(
         f"{PREFIX}/admin/clientes/{lista.json()['clientes'][0]['id']}", headers=admin_headers
     )
     assert detalle.status_code == 200
-    assert detalle.json()["cliente"]["placa"] == "AB123CD"
+    assert detalle.json()["cliente"]["placa"] == "ABC456"
+
+
+def test_sync_ignora_placa_invalida(client, admin_headers):
+    headers = login_cliente(client, "TST108", "3005556677", "Luis")
+    venta = enviar_venta(client, "F-PL-2", 10.0, 20000, telefono="3005556677", placa="ABC12D")
+    assert venta.status_code == 200, venta.text
+
+    perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
+    assert perfil.json()["placa"] == "TST108"
+
+    lista = client.get(f"{PREFIX}/admin/clientes?q=TST108", headers=admin_headers)
+    detalle = client.get(
+        f"{PREFIX}/admin/clientes/{lista.json()['clientes'][0]['id']}", headers=admin_headers
+    )
+    assert detalle.json()["ventas"][0]["placa"] is None
 
 
 def test_config_publico(client, admin_headers):
@@ -313,5 +328,76 @@ def test_editar_imagen_recompensa(client, admin_headers):
     admin = client.get(f"{PREFIX}/admin/recompensas", headers=admin_headers).json()
     editada = next(r for r in admin if r["id"] == recompensa_id)
     assert editada["imagen"] == "https://cdn.ejemplo.com/despues.jpg"
+
+
+def test_sync_asocia_placa_nueva(client, admin_headers):
+    headers = login_cliente(client, "TST109", "3009998877", "Nora")
+    venta = enviar_venta(client, "F-ASOC-1", 15.0, 30000, telefono="3009998877", placa="tst110")
+    assert venta.status_code == 200, venta.text
+
+    perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
+    assert set(perfil.json()["placas"]) == {"TST109", "TST110"}
+
+    lista = client.get(f"{PREFIX}/admin/clientes?q=TST110", headers=admin_headers)
+    assert lista.json()["total"] == 1
+    assert lista.json()["clientes"][0]["placas"] == ["TST109", "TST110"]
+
+
+def test_sync_no_roba_placa_de_otra_cuenta(client, admin_headers):
+    a = login_cliente(client, "TST111", "3003334455", "A")
+    b = login_cliente(client, "TST112", "3003334466", "B")
+    enviar_venta(client, "F-ROBA-1", 10.0, 20000, telefono="3003334466", placa="TST111")
+
+    perfil_a = client.get(f"{PREFIX}/clientes/me", headers=a)
+    perfil_b = client.get(f"{PREFIX}/clientes/me", headers=b)
+    assert perfil_a.json()["placas"] == ["TST111"]
+    assert perfil_b.json()["placas"] == ["TST112"]
+
+
+def test_admin_agrega_y_quita_placa(client, admin_headers):
+    headers = login_cliente(client, "TST113", "3003334477", "C")
+    cid = client.get(f"{PREFIX}/clientes/me", headers=headers).json()["id"]
+
+    alta = client.post(
+        f"{PREFIX}/admin/clientes/{cid}/vehiculos", json={"placa": "tst114"}, headers=admin_headers
+    )
+    assert alta.status_code == 201, alta.text
+    assert alta.json()["placa"] == "TST114"
+
+    detalle = client.get(f"{PREFIX}/admin/clientes/{cid}", headers=admin_headers).json()
+    assert {v["placa"] for v in detalle["cliente"]["placas"]} == {"TST113", "TST114"}
+
+    vid = next(v["id"] for v in detalle["cliente"]["placas"] if v["placa"] == "TST114")
+    baja = client.delete(f"{PREFIX}/admin/clientes/{cid}/vehiculos/{vid}", headers=admin_headers)
+    assert baja.status_code == 200
+
+    perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
+    assert perfil.json()["placas"] == ["TST113"]
+
+    repetida = client.post(
+        f"{PREFIX}/admin/clientes/{cid}/vehiculos", json={"placa": "TST113"}, headers=admin_headers
+    )
+    assert repetida.status_code == 409
+
+    invalida = client.post(
+        f"{PREFIX}/admin/clientes/{cid}/vehiculos", json={"placa": "AB12"}, headers=admin_headers
+    )
+    assert invalida.status_code == 400
+
+
+def test_placa_quitada_se_reactiva_al_entrar(client, admin_headers):
+    headers = login_cliente(client, "TST115", "3003334488", "D")
+    cid = client.get(f"{PREFIX}/clientes/me", headers=headers).json()["id"]
+
+    detalle = client.get(f"{PREFIX}/admin/clientes/{cid}", headers=admin_headers).json()
+    vid = detalle["cliente"]["placas"][0]["id"]
+    client.delete(f"{PREFIX}/admin/clientes/{cid}/vehiculos/{vid}", headers=admin_headers)
+
+    assert client.post(f"{PREFIX}/auth/identificar", json={"placa": "TST115"}).json()["existe"] is False
+
+    codigo = solicitar_otp(client, "TST115", "3003334488")
+    verify = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": "TST115", "codigo": codigo})
+    assert verify.status_code == 200, verify.text
+    assert verify.json()["cliente"]["placas"] == ["TST115"]
 
 

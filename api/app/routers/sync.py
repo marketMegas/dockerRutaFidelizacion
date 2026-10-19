@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..models import Cliente, Venta
+from ..models import Cliente, Vehiculo, Venta
 from ..schemas import VentaSync
-from ..security import normalizar_placa
+from ..security import normalizar_placa, placa_valida
 from ..services import ledger
 from ..services.motor_de_reglas import calcular_puntos
 
@@ -48,11 +48,15 @@ def sincronizar_venta(
 
     cliente = _resolver_cliente(db, body)
     placa = normalizar_placa(body.placa)
-    if placa and placa != "SINPLACA":
-        en_uso = db.scalar(
-            select(Cliente).where(Cliente.placa == placa, Cliente.id != cliente.id)
-        )
-        if en_uso is None:
+    if not placa_valida(placa):
+        placa = ""
+    if placa:
+        vehiculo = db.scalar(select(Vehiculo).where(Vehiculo.placa == placa))
+        if vehiculo is None:
+            db.add(Vehiculo(cliente_id=cliente.id, placa=placa))
+            cliente.placa = placa
+        elif vehiculo.cliente_id == cliente.id:
+            vehiculo.activo = True
             cliente.placa = placa
 
     puntos, regla = calcular_puntos(db, body.volumen_litros)

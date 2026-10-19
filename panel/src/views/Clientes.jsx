@@ -5,6 +5,7 @@ export default function Clientes() {
   const [q, setQ] = useState('')
   const [data, setData] = useState({ total: 0, clientes: [] })
   const [detalle, setDetalle] = useState(null)
+  const [nuevaPlaca, setNuevaPlaca] = useState('')
   const [error, setError] = useState('')
 
   function cargar() {
@@ -22,6 +23,31 @@ export default function Clientes() {
       setDetalle(await api(`/admin/clientes/${id}`))
     } catch (e) {
       setError(e.message)
+    }
+  }
+
+  async function agregarPlaca(e) {
+    e.preventDefault()
+    setError('')
+    try {
+      await api(`/admin/clientes/${detalle.cliente.id}/vehiculos`, { method: 'POST', body: { placa: nuevaPlaca } })
+      setNuevaPlaca('')
+      await ver(detalle.cliente.id)
+      cargar()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function quitarPlaca(vehiculoId) {
+    if (!confirm('Quitar esta placa del cliente?')) return
+    setError('')
+    try {
+      await api(`/admin/clientes/${detalle.cliente.id}/vehiculos/${vehiculoId}`, { method: 'DELETE' })
+      await ver(detalle.cliente.id)
+      cargar()
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -52,7 +78,7 @@ export default function Clientes() {
       <table>
         <thead>
           <tr>
-            <th>Placa</th>
+            <th>Placas</th>
             <th>Cedula</th>
             <th>Telefono</th>
             <th>Nombre</th>
@@ -63,7 +89,7 @@ export default function Clientes() {
         <tbody>
           {data.clientes.map((c) => (
             <tr key={c.id}>
-              <td>{c.placa || '-'}</td>
+              <td>{(c.placas || []).join(', ') || c.placa || '-'}</td>
               <td>{c.cedula || '-'}</td>
               <td>{c.telefono}</td>
               <td>{c.nombre || '-'}</td>
@@ -86,6 +112,26 @@ export default function Clientes() {
             </h3>
             <button onClick={() => setDetalle(null)}>Cerrar</button>
           </div>
+
+          <h4>Placas</h4>
+          <ul className="placas-cliente">
+            {(detalle.cliente.placas || []).map((v) => (
+              <li key={v.id}>
+                <span>{v.placa}</span>
+                <button onClick={() => quitarPlaca(v.id)}>Quitar</button>
+              </li>
+            ))}
+            {(detalle.cliente.placas || []).length === 0 && <li className="muted">Sin placas</li>}
+          </ul>
+          <form className="fila" onSubmit={agregarPlaca}>
+            <input
+              placeholder="ABC123"
+              value={nuevaPlaca}
+              onChange={(e) => setNuevaPlaca(e.target.value.toUpperCase())}
+            />
+            <button type="submit">Agregar placa</button>
+          </form>
+
           <h4>Movimientos</h4>
           <table>
             <thead>

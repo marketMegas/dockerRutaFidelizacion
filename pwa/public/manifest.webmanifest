@@ -1,13 +1,13 @@
 {
-  "name": "GasLP Puntos",
-  "short_name": "GasLP Puntos",
+  "name": "Programa: Fidelización puntos g-max",
+  "short_name": "Fidelización g-max",
   "description": "Suma puntos por tu consumo en la estacion de GLP y canjealos por recompensas.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1b4d24",
-  "theme_color": "#1b4d24",
+  "background_color": "#ff9842",
+  "theme_color": "#ff9842",
   "icons": [
     {
       "src": "/icon.png",

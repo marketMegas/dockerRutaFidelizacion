@@ -3,8 +3,9 @@ import { fmtFecha } from '../api.js'
 export default function Datos({ cliente, refrescar }) {
   if (!cliente) return <p className="muted">Cargando...</p>
 
+  const placas = cliente.placas?.length ? cliente.placas : cliente.placa ? [cliente.placa] : []
+
   const filas = [
-    { k: 'Placa', v: cliente.placa || '-' },
     { k: 'Celular', v: cliente.telefono },
     { k: 'Nombre', v: cliente.nombre || '-' },
   ]
@@ -19,6 +20,18 @@ export default function Datos({ cliente, refrescar }) {
         <span className="saldo-v">{cliente.puntos}</span>
         <span className="saldo-t">puntos disponibles</span>
       </div>
+
+      <h3>Mis placas</h3>
+      <ul className="lista">
+        {placas.map((p) => (
+          <li key={p}>
+            <div className="lista-info">
+              <strong>{p}</strong>
+            </div>
+          </li>
+        ))}
+        {placas.length === 0 && <li className="muted">Aun no tienes placas registradas</li>}
+      </ul>
 
       <ul className="lista">
         {filas.map((f) => (

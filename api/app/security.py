@@ -36,6 +36,11 @@ def normalizar_placa(valor: str | None) -> str:
     return "".join(ch for ch in (valor or "").upper() if "A" <= ch <= "Z" or "0" <= ch <= "9")[:10]
 
 
+def placa_valida(valor: str | None) -> bool:
+    placa = normalizar_placa(valor)
+    return len(placa) == 6 and placa[:3].isalpha() and placa[3:].isdigit()
+
+
 def enmascarar_telefono(telefono: str | None) -> str:
     limpio = (telefono or "").strip()
     if len(limpio) <= 4:
