@@ -32,24 +32,6 @@ def test_flujo_completo(client, admin_headers):
     assert len(movimientos.json()) == 1
 
 
-def test_qr_y_venta_por_qr(client):
-    headers = login_cliente(client, "TST1002", "3009998877", "Maria")
-
-    qr = client.get(f"{PREFIX}/clientes/me/qr", headers=headers)
-    assert qr.status_code == 200
-    payload = qr.json()["payload"]
-
-    venta = enviar_venta(client, "F-QR-1", 30.0, 60000, qr_payload=payload)
-    assert venta.status_code == 200, venta.text
-    assert venta.json()["saldo"] == 30
-
-
-def test_qr_invalido_rechazado(client):
-    login_cliente(client, "TST1003", "3005556677")
-    resp = enviar_venta(client, "F-QR-BAD", 10.0, 20000, qr_payload="invalido.firma")
-    assert resp.status_code == 400
-
-
 def test_sync_requiere_api_key(client):
     login_cliente(client, "TST1004", "3007778899")
     resp = client.post(
@@ -58,6 +40,20 @@ def test_sync_requiere_api_key(client):
         headers={"X-API-Key": "clave-mala"},
     )
     assert resp.status_code == 401
+
+
+def test_sync_requiere_telefono(client):
+    resp = client.post(
+        f"{PREFIX}/sync/venta",
+        json={"id_externo": "F-NOTEL", "volumen_litros": 5, "monto": 10000},
+        headers={"X-API-Key": "test-key"},
+    )
+    assert resp.status_code == 400
+    assert "telefono" in resp.json()["detail"]
+
+
+def test_endpoint_qr_no_existe(client):
+    assert client.get(f"{PREFIX}/clientes/me/qr").status_code == 404
 
 
 def test_canje_y_reversion_admin(client, admin_headers):

@@ -186,41 +186,6 @@ h2 {
   color: rgba(255, 255, 255, 0.92);
 }
 
-.qr-card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 1.25rem;
-  width: 100%;
-  text-align: center;
-  box-shadow: var(--shadow);
-}
-
-.qr-titulo {
-  margin: 0 0 0.75rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.qr-img,
-.qr-vacio {
-  width: 260px;
-  height: 260px;
-  max-width: 100%;
-  border-radius: 12px;
-}
-
-.qr-vacio {
-  background: #eef7ea;
-  margin: 0 auto;
-}
-
-.qr-hint {
-  font-size: 0.8rem;
-  color: var(--muted);
-  margin: 0.6rem 0 0;
-}
-
 button.primario {
   width: 100%;
   background: var(--orange);

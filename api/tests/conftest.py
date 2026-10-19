@@ -68,7 +68,6 @@ def enviar_venta(
     litros: float,
     monto: float,
     telefono: str | None = None,
-    qr_payload: str | None = None,
     placa: str | None = None,
 ):
     body = {
@@ -82,6 +81,4 @@ def enviar_venta(
         body["placa"] = placa
     if telefono:
         body["telefono"] = telefono
-    if qr_payload:
-        body["qr_payload"] = qr_payload
     return client.post(f"{PREFIX}/sync/venta", json=body, headers={"X-API-Key": "test-key"})

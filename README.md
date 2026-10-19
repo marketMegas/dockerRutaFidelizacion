@@ -1,7 +1,7 @@
 # Sistema de Fidelizacion GLP
 
 Programa de puntos para una estacion de GLP (autogas): los clientes acumulan puntos por cada
-litro que cargan, se identifican con un codigo QR desde su celular, y canjean recompensas.
+litro que cargan, se identifican con la placa de su vehiculo, y canjean recompensas.
 La administracion de la estacion gestiona reglas, recompensas, clientes y reportes.
 
 Pensado para desplegarse en el VPS Hostinger (AlmaLinux 9 + CyberPanel/OpenLiteSpeed) junto a
@@ -14,14 +14,14 @@ integracion con Zencillo.
 |-----------------------|-------------------------------------------------------------|-----------------------------|---------------|
 | `api/`                | Backend: reglas, puntos (ledger), auth OTP/JWT, admin        | FastAPI + SQLAlchemy + Postgres | 127.0.0.1:8002 |
 | `panel/`              | Panel de administracion (React SPA)                          | React 18 + Vite + nginx     | 127.0.0.1:5139 |
-| `pwa/`                | App del cliente (instalable, muestra QR y saldo)             | React 18 + Vite + nginx     | 127.0.0.1:5140 |
+| `pwa/`                | App del cliente (instalable, muestra saldo)                  | React 18 + Vite + nginx     | 127.0.0.1:5140 |
 | `connector-zencillo/` | Trae ventas desde Zencillo (o simulador) hacia la API        | Python + requests           | -             |
 | `deploy/`             | Script de despliegue y plantillas de LiteSpeed               | bash                        | -             |
 | `db`                  | PostgreSQL 17                                                | postgres:17-alpine          | 127.0.0.1:5433 |
 | `redis`               | Cache / support                                              | redis:7-alpine              | interno       |
 
-Flujo de puntos: el conector envia una venta a `POST /fid-api/sync/venta` con el telefono o el
-QR del cliente y la placa del vehiculo (la ultima placa queda guardada en el cliente); la API
+Flujo de puntos: el conector envia una venta a `POST /fid-api/sync/venta` con el telefono del
+cliente y la placa del vehiculo (la ultima placa queda guardada en el cliente); la API
 calcula puntos con la regla vigente y registra un movimiento inmutable
 en el ledger. El panel y la PWA leen saldos y movimientos desde la misma API.
 
@@ -42,7 +42,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- PWA cliente: http://localhost:5140 — pestañas: `Mis datos` (primera), `Mi QR`, `Historial`, `Recompensas`
+- PWA cliente: http://localhost:5140 — pestañas: `Mis datos` (primera), `Saldo`, `Historial`, `Recompensas`
 - Panel admin: http://localhost:5139/panel/  (usuario `admin` / `admin123` por defecto)
 - API: http://localhost:8002/health
 - Conector (opcional, perfil aparte): `docker compose --profile conector up -d`
@@ -95,7 +95,7 @@ Prefijo `API_PREFIX=/fid-api`.
 - `POST /fid-api/auth/identificar` — consulta si la placa existe (y cel enmascarado).
 - `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente por placa (auto-registro; `cedula` opcional en `otp/request`).
 - `POST /fid-api/auth/admin` — login del panel.
-- `GET  /fid-api/clientes/me`, `/me/qr`, `/me/movimientos` — datos del cliente autenticado.
+- `GET  /fid-api/clientes/me`, `/me/movimientos` — datos del cliente autenticado.
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.
 - `GET  /fid-api/recompensas`, `POST /fid-api/canjes`, `GET /fid-api/canjes/mis` — recompensas y canjes.
 - `GET  /fid-api/config` — publico; tasa vigente (`puntos_por_litro`) para mostrar equivalencias en la PWA.

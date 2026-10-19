@@ -69,8 +69,6 @@ def venta_simulada(args):
     }
     if args.telefono:
         venta["telefono"] = args.telefono
-    if args.qr:
-        venta["qr_payload"] = args.qr
     return venta
 
 
@@ -120,10 +118,9 @@ def menu():
             litros = float(input("Litros: ").strip())
             placa = input("Placa: ").strip() or "SINPLACA"
             telefono = input("Telefono del cliente (opcional): ").strip()
-            qr = input("QR del cliente (opcional): ").strip()
             args = argparse.Namespace(
                 litros=litros, placa=placa, telefono=telefono or None,
-                qr=qr or None, factura=None, monto=None,
+                factura=None, monto=None,
             )
             print(registrar(venta_simulada(args)))
         elif opcion == "2":
@@ -144,7 +141,6 @@ def main():
     p_sim.add_argument("--litros", type=float, required=True)
     p_sim.add_argument("--placa", default="SINPLACA")
     p_sim.add_argument("--telefono")
-    p_sim.add_argument("--qr")
     p_sim.add_argument("--factura")
     p_sim.add_argument("--monto", type=float)
     p_sim.set_defaults(func=cmd_simular)

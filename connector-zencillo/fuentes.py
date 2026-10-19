@@ -11,7 +11,6 @@ CAMPOS = {
     "monto": ["valor_total", "total", "monto", "valor"],
     "placa": ["placa", "vehiculo", "patente"],
     "telefono": ["telefono", "celular", "movil"],
-    "qr_payload": ["qr", "qr_payload", "codigo_qr"],
     "fecha_hora": ["fecha_hora", "fecha", "fechaHora"],
 }
 

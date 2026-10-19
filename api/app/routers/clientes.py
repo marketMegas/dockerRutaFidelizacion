@@ -2,11 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..config import settings
 from ..database import get_db
 from ..deps import require_cliente
 from ..models import Cliente, LedgerPuntos
-from ..security import firmar_qr
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
 
@@ -45,11 +43,3 @@ def mis_movimientos(limite: int = 100, cliente: Cliente = Depends(require_client
         }
         for m in movimientos
     ]
-
-
-@router.get("/me/qr")
-def mi_qr(cliente: Cliente = Depends(require_cliente)):
-    return {
-        "payload": firmar_qr(cliente.id),
-        "expira_en_segundos": settings.QR_TTL_SECONDS,
-    }

@@ -31,7 +31,6 @@ class VentaSync(BaseModel):
     placa: str | None = None
     estacion_id: str | None = None
     origen: str = "zencillo"
-    qr_payload: str | None = None
     telefono: str | None = None
 
 

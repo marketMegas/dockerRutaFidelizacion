@@ -6,7 +6,7 @@ from ..config import settings
 from ..database import get_db
 from ..models import Cliente, Venta
 from ..schemas import VentaSync
-from ..security import normalizar_placa, verificar_qr
+from ..security import normalizar_placa
 from ..services import ledger
 from ..services.motor_de_reglas import calcular_puntos
 
@@ -19,23 +19,13 @@ def _verificar_api_key(x_api_key: str) -> None:
 
 
 def _resolver_cliente(db: Session, body: VentaSync) -> Cliente:
-    if body.qr_payload:
-        try:
-            data = verificar_qr(body.qr_payload)
-        except ValueError as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
-        cliente = db.get(Cliente, int(data["cid"]))
-        if cliente is None or not cliente.activo:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Cliente del QR no existe")
-        return cliente
+    if not body.telefono:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Se requiere telefono")
 
-    if body.telefono:
-        cliente = db.scalar(select(Cliente).where(Cliente.telefono == body.telefono))
-        if cliente is None or not cliente.activo:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Telefono no registrado")
-        return cliente
-
-    raise HTTPException(status.HTTP_400_BAD_REQUEST, "Se requiere qr_payload o telefono")
+    cliente = db.scalar(select(Cliente).where(Cliente.telefono == body.telefono))
+    if cliente is None or not cliente.activo:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Telefono no registrado")
+    return cliente
 
 
 @router.post("/venta")

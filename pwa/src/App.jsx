@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, getToken, setToken } from './api.js'
 import Login from './views/Login.jsx'
 import Datos from './views/Datos.jsx'
-import Inicio from './views/Inicio.jsx'
+import Saldo from './views/Saldo.jsx'
 import Historial from './views/Historial.jsx'
 import Canjes from './views/Canjes.jsx'
 
 const TABS = [
   { key: 'datos', label: 'Mis datos', Comp: Datos },
-  { key: 'inicio', label: 'Mi QR', Comp: Inicio },
+  { key: 'saldo', label: 'Saldo', Comp: Saldo },
   { key: 'historial', label: 'Historial', Comp: Historial },
   { key: 'canjes', label: 'Recompensas', Comp: Canjes },
 ]

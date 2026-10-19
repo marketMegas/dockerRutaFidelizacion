@@ -16,7 +16,6 @@ class Settings(BaseSettings):
     OTP_TTL_SECONDS: int = 300
     OTP_RATE_MAX: int = 5
     OTP_RATE_VENTANA: int = 900
-    QR_TTL_SECONDS: int = 300
     CORS_ORIGINS: str = "*"
     API_PREFIX: str = "/fid-api"
     SYNC_API_KEY: str = "dev-api-key"

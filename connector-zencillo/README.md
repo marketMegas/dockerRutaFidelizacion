@@ -1,7 +1,7 @@
 # Conector Zencillo
 
 Trae las ventas de combustible desde Zencillo (o desde un simulador) hacia la API de
-fidelizacion y acumula puntos por cada cliente identificado con su telefono o el QR de la PWA.
+fidelizacion y acumula puntos por cada cliente identificado con su telefono.
 
 El conector es tolerante a fallos: si la API de fidelizacion no responde, la venta se guarda
 en una cola offline (`cola_offline.json`) y se reenvia automaticamente cuando vuelve la
@@ -56,7 +56,7 @@ La integracion definitiva depende del modulo/API que Zencillo habilite. Pedir po
    - `precio` unitario y `valor_total`.
    - `islero` / despachador (opcional, para auditoria).
    - Identificacion del cliente si Zencillo la captura (telefono) — opcional,
-     normalmente el cliente se identifica en la PWA con su placa/QR/telefono.
+      normalmente el cliente se identifica en la PWA con su placa/telefono.
 5. **Webhooks**: si ofrecen notificacion push de venta (mejor que polling), pedir contrato.
 6. **Ambiente de pruebas** y limites de peticiones.
 
