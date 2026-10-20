@@ -95,7 +95,7 @@ export default function Recompensas() {
   return (
     <div>
       <h2>Recompensas</h2>
-      <p className="muted">La imagen es una URL publica que se muestra en la tarjeta de la PWA.</p>
+      <p className="muted">La imagen es una URL publica que se mostrara en la tarjeta de recompensas del usuario.</p>
       {error && <p className="error">{error}</p>}
 
       <table>
@@ -115,7 +115,7 @@ export default function Recompensas() {
             if (editando === r.id) {
               return (
                 <tr key={r.id}>
-                  <td>
+                  <td data-label="Imagen">
                     <input
                       type="url"
                       placeholder="https://..."
@@ -123,13 +123,13 @@ export default function Recompensas() {
                       onChange={cambiar(setEdit, 'imagen')}
                     />
                   </td>
-                  <td>
+                  <td data-label="Nombre">
                     <input value={edit.nombre} onChange={cambiar(setEdit, 'nombre')} required />
                   </td>
-                  <td>
+                  <td data-label="Descripcion">
                     <input value={edit.descripcion} onChange={cambiar(setEdit, 'descripcion')} />
                   </td>
-                  <td>
+                  <td data-label="Costo (pts)">
                     <input
                       type="number"
                       min="1"
@@ -137,7 +137,7 @@ export default function Recompensas() {
                       onChange={cambiar(setEdit, 'costo_puntos')}
                     />
                   </td>
-                  <td>
+                  <td data-label="Stock">
                     <input
                       type="number"
                       min="0"
@@ -145,14 +145,14 @@ export default function Recompensas() {
                       onChange={cambiar(setEdit, 'stock')}
                     />
                   </td>
-                  <td>
+                  <td data-label="Activa">
                     <input
                       type="checkbox"
                       checked={!!edit.activa}
                       onChange={(e) => setEdit({ ...edit, activa: e.target.checked })}
                     />
                   </td>
-                  <td>
+                  <td className="celda-acciones">
                     <button onClick={guardar}>Guardar</button>
                     <button onClick={cancelar}>Cancelar</button>
                   </td>
@@ -161,19 +161,19 @@ export default function Recompensas() {
             }
             return (
               <tr key={r.id}>
-                <td>
+                <td data-label="Imagen">
                   {r.imagen ? (
                     <img className="miniatura" src={r.imagen} alt="" />
                   ) : (
                     <span className="miniatura miniatura-vacia" />
                   )}
                 </td>
-                <td>{r.nombre}</td>
-                <td>{r.descripcion || '-'}</td>
-                <td>{r.costo_puntos}</td>
-                <td>{r.stock}</td>
-                <td>{r.activa ? 'Activa' : 'Inactiva'}</td>
-                <td>
+                <td data-label="Nombre">{r.nombre}</td>
+                <td data-label="Descripcion">{r.descripcion || '-'}</td>
+                <td data-label="Costo (pts)">{r.costo_puntos}</td>
+                <td data-label="Stock">{r.stock}</td>
+                <td data-label="Estado">{r.activa ? 'Activa' : 'Inactiva'}</td>
+                <td className="celda-acciones">
                   <button onClick={() => editar(r)}>Editar</button>
                   <button onClick={() => alternar(r)}>{r.activa ? 'Desactivar' : 'Activar'}</button>
                 </td>

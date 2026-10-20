@@ -171,7 +171,7 @@ export default function Reglas() {
                       onChange={(e) => setEdit({ ...edit, activa: e.target.checked })}
                     />
                   </td>
-                  <td className="reglas-acciones-celda" data-label="Acciones">
+                  <td className="celda-acciones" data-label="Acciones">
                     <div className="reglas-acciones">
                       <button onClick={guardar}>Guardar</button>
                       <button onClick={cancelar}>Cancelar</button>
@@ -188,7 +188,7 @@ export default function Reglas() {
                 <td data-label="Desde">{r.desde ? fmtFecha(r.desde) : '-'}</td>
                 <td data-label="Hasta">{r.hasta ? fmtFecha(r.hasta) : '-'}</td>
                 <td data-label="Estado">{r.activa ? 'Activa' : 'Inactiva'}</td>
-                <td className="reglas-acciones-celda" data-label="Acciones">
+                <td className="celda-acciones" data-label="Acciones">
                   <div className="reglas-acciones">
                     <button onClick={() => editar(r)}>Editar</button>
                     <button onClick={() => alternar(r)}>{r.activa ? 'Desactivar' : 'Activar'}</button>

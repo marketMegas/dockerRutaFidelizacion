@@ -9,7 +9,7 @@ const PASOS = [
   },
   {
     n: 2,
-    t: 'Carga glp',
+    t: 'Carga g-max',
     d: 'Al cargar en la estacion, la venta se asocia a tu cuenta con el telefono o la placa que registraste.',
   },
   {
@@ -60,9 +60,10 @@ export default function Funcionamiento() {
       <ul className="lista">
         <li>
           <div className="lista-info">
-            <strong>Tu celular acumula, tu cedula te identifica</strong>
+            <strong>Tu placa acumula, tu cedula te identifica</strong>
             <span className="muted">
-              La cuenta y los puntos son del celular; la cedula se presenta al reclamar recompensas.
+              Cada vez que cargas con tu placa se acumulan puntos en tu cuenta (tu celular).
+              La cedula se presenta al reclamar recompensas.
             </span>
           </div>
         </li>

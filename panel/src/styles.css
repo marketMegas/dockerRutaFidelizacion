@@ -207,29 +207,33 @@ button {
   font: inherit;
   cursor: pointer;
   border-radius: 8px;
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--text);
+  border: 1px solid var(--green-2);
+  background: var(--green);
+  color: #fff;
   padding: 0.5rem 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.15s, border-color 0.15s;
 }
 
 button:hover {
-  border-color: var(--green);
-  color: var(--green);
+  background: var(--green-2);
+  border-color: var(--green-3);
+  color: #fff;
 }
 
 form.fila button,
 .login button {
-  background: var(--orange);
+  background: var(--green-2);
   color: #fff;
-  border-color: var(--orange-2);
+  border-color: var(--green-3);
   font-weight: 600;
 }
 
 form.fila button:hover,
 .login button:hover {
-  background: var(--orange-2);
+  background: var(--green-3);
   color: #fff;
 }
 
@@ -237,8 +241,33 @@ td button + button {
   margin-left: 0;
 }
 
-.reglas-acciones-celda {
+.celda-acciones {
   min-width: 150px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* Cuando hay dos botones (ej. Editar + Activar/Desactivar) van del mismo ancho */
+.celda-acciones:has(> button + button) {
+  min-width: 205px;
+}
+
+.celda-acciones:has(> button + button) > button {
+  width: calc(50% - 0.2rem);
+  min-height: 36px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.celda-acciones > button + button {
+  margin-left: 0.4rem;
+}
+
+/* Boton unico (ej. Detalle) un poco mas compacto para alinearse */
+.celda-acciones > button:only-child {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  min-height: 34px;
 }
 
 .reglas-acciones {
@@ -253,8 +282,8 @@ td button + button {
 
 .miniatura {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 130px;
+  height: 86px;
   border-radius: 8px;
   object-fit: cover;
   background: #eef7ea;
@@ -371,7 +400,8 @@ tbody tr:hover td {
 }
 
 .barra {
-  width: 140px;
+  width: 100%;
+  max-width: 140px;
   height: 8px;
   background: #e3f1dc;
   border-radius: 4px;
@@ -441,8 +471,18 @@ tbody tr:hover td {
     flex: 1;
   }
   .sidebar nav {
+    flex-basis: 100%;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.3rem;
+    padding-bottom: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sidebar nav button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 40px;
   }
   .salir {
     margin-top: 0;
@@ -450,93 +490,140 @@ tbody tr:hover td {
   .contenido {
     padding: 1.25rem;
   }
-  table {
-    display: block;
-    overflow-x: auto;
+  /* Botones mas compactos en pantalla pequena */
+  button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.78rem;
   }
-  .reglas-acciones {
-    flex-direction: column;
-  }
-  .reglas-acciones button {
+  /* Imagen de recompensa mas grande en pantalla pequena */
+  tbody td .miniatura {
     width: 100%;
+    max-width: 240px;
+    height: 160px;
   }
+  /* Todas las tablas se adaptan a pantalla pequena como tarjetas apiladas */
+  table,
   .reglas-tabla {
     display: block;
     overflow: visible;
     border: 0;
     background: transparent;
+    border-radius: 0;
   }
-  .reglas-tabla thead {
+  thead {
     display: none;
   }
-  .reglas-tabla tbody {
+  tbody {
     display: grid;
     gap: 0.75rem;
   }
-  .reglas-tabla tbody tr {
+  tbody tr {
     display: block;
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--panel);
   }
-  .reglas-tabla tbody tr:hover td {
+  tbody tr:hover td {
     background: var(--panel);
   }
-  .reglas-tabla tbody td {
+  tbody td {
     display: grid;
-    grid-template-columns: minmax(5.5rem, 0.7fr) minmax(0, 1fr);
+    grid-template-columns: minmax(5rem, 0.7fr) minmax(0, 1fr);
     align-items: center;
     gap: 0.65rem;
     padding: 0.65rem 0.75rem;
     overflow-wrap: anywhere;
   }
-  .reglas-tabla tbody td::before {
+  tbody td::before {
     content: attr(data-label);
     color: var(--muted);
     font-size: 0.8rem;
     font-weight: 600;
   }
-  .reglas-tabla tbody td.reglas-acciones-celda {
+  tbody td:empty {
+    display: none;
+  }
+  tbody td[colspan] {
     display: block;
-    padding: 0.75rem;
-    border-bottom: 0;
-  }
-  .reglas-tabla .reglas-acciones-celda::before {
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-  .reglas-tabla .reglas-acciones {
-    flex-direction: column;
-  }
-  .reglas-tabla .reglas-acciones button {
-    min-height: 44px;
-    width: 100%;
-  }
-  .reglas-tabla tbody td input:not([type='checkbox']) {
-    width: 100%;
-    min-width: 0;
-  }
-  .reglas-tabla tbody td input[type='checkbox'] {
-    min-width: 0;
-    justify-self: start;
-  }
-  .reglas-tabla tbody td.reglas-vacia {
-    display: block;
+    text-align: center;
     padding: 1rem;
   }
-  .reglas-tabla tbody td.reglas-vacia::before {
+  tbody td[colspan]::before {
     content: none;
+  }
+  tbody td.celda-acciones {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  tbody td.celda-acciones::before {
+    content: none;
+  }
+  tbody td.celda-acciones > button {
+    width: auto;
+    min-height: 36px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.95rem;
+  }
+  tbody td.celda-acciones:empty {
+    display: none;
+  }
+  .reglas-acciones {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .reglas-acciones button {
+    width: auto;
+    min-height: 36px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.95rem;
+  }
+  tbody td.celda-barra {
+    display: block;
+  }
+  tbody td.celda-barra::before {
+    content: none;
+  }
+  tbody td.celda-barra .barra {
+    width: 100%;
+    max-width: none;
+  }
+  tbody td input:not([type='checkbox']) {
+    width: 100%;
+    min-width: 0;
+  }
+  tbody td input[type='checkbox'] {
+    min-width: 0;
+    justify-self: start;
   }
 }
 
 @media (max-width: 380px) {
   .contenido {
-    padding: 0.75rem;
-  }
-  .reglas-tabla tbody td {
-    grid-template-columns: minmax(4.5rem, 0.65fr) minmax(0, 1fr);
-    gap: 0.45rem;
     padding: 0.6rem;
+  }
+  tbody tr {
+    border-radius: 8px;
+  }
+  tbody td {
+    grid-template-columns: minmax(4rem, 0.6fr) minmax(0, 1fr);
+    gap: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+  }
+  tbody td::before {
+    font-size: 0.72rem;
+  }
+  tbody td .miniatura {
+    max-width: 150px;
+    height: 100px;
+  }
+  .reglas-acciones button {
+    min-height: 34px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
   }
 }

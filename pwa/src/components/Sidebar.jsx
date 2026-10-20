@@ -31,6 +31,7 @@ export default function Sidebar({ cliente, vista, onNavegar, onSalir }) {
     <aside className="sidebar" aria-label="Mi cuenta">
       <div className="sidebar-cuenta">
         <div className="sidebar-id">
+          <span className="saludo">Hola</span>
           <strong>{cliente?.nombre || 'Cliente'}</strong>
           <span className="muted">{cliente?.telefono || '-'}</span>
           <span className="muted">{cliente?.cedula ? `C.C. ${cliente.cedula}` : 'Sin cedula'}</span>

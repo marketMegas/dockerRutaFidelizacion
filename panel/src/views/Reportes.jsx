@@ -58,12 +58,12 @@ export default function Reportes() {
         <tbody>
           {ventas.map((v) => (
             <tr key={v.dia}>
-              <td>{v.dia}</td>
-              <td>{v.cantidad}</td>
-              <td>{v.litros.toFixed(1)}</td>
-              <td>{v.monto.toLocaleString('es-CO')}</td>
-              <td>{v.puntos}</td>
-              <td>
+              <td data-label="Dia">{v.dia}</td>
+              <td data-label="Ventas">{v.cantidad}</td>
+              <td data-label="Litros">{v.litros.toFixed(1)}</td>
+              <td data-label="Monto">{v.monto.toLocaleString('es-CO')}</td>
+              <td data-label="Puntos">{v.puntos}</td>
+              <td className="celda-barra">
                 <div className="barra">
                   <div className="barra-fill" style={{ width: `${(v.litros / maxLitros) * 100}%` }} />
                 </div>
@@ -116,13 +116,13 @@ export default function Reportes() {
         <tbody>
           {canjes.map((c) => (
             <tr key={c.id}>
-              <td>{fmtFecha(c.created_at)}</td>
-              <td>{c.cliente || '-'}</td>
-              <td>{c.cedula || '-'}</td>
-              <td>{c.recompensa || '-'}</td>
-              <td>{c.puntos_costo}</td>
-              <td>{c.estado}</td>
-              <td>
+              <td data-label="Fecha">{fmtFecha(c.created_at)}</td>
+              <td data-label="Cliente">{c.cliente || '-'}</td>
+              <td data-label="Cedula">{c.cedula || '-'}</td>
+              <td data-label="Recompensa">{c.recompensa || '-'}</td>
+              <td data-label="Puntos">{c.puntos_costo}</td>
+              <td data-label="Estado">{c.estado}</td>
+              <td className="celda-acciones">
                 {c.estado !== 'entregado' && <button onClick={() => entregar(c.id)}>Marcar entregado</button>}
               </td>
             </tr>

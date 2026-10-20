@@ -104,12 +104,12 @@ export default function Clientes() {
         <tbody>
           {data.clientes.map((c) => (
             <tr key={c.id}>
-              <td>{(c.placas || []).join(', ') || c.placa || '-'}</td>
-              <td>{c.cedula || '-'}</td>
-              <td>{c.telefono}</td>
-              <td>{c.nombre || '-'}</td>
-              <td>{c.puntos}</td>
-              <td>
+              <td data-label="Placas">{(c.placas || []).join(', ') || c.placa || '-'}</td>
+              <td data-label="Cedula">{c.cedula || '-'}</td>
+              <td data-label="Telefono">{c.telefono}</td>
+              <td data-label="Nombre">{c.nombre || '-'}</td>
+              <td data-label="Puntos">{c.puntos}</td>
+              <td className="celda-acciones">
                 <button onClick={() => ver(c.id)}>Detalle</button>
               </td>
             </tr>
@@ -173,12 +173,12 @@ export default function Clientes() {
             <tbody>
               {detalle.movimientos.map((m) => (
                 <tr key={m.id}>
-                  <td>{fmtFecha(m.created_at)}</td>
-                  <td>{m.tipo}</td>
-                  <td className={m.cantidad < 0 ? 'neg' : 'pos'}>{m.cantidad}</td>
-                  <td>{m.saldo_resultante}</td>
-                  <td>{m.motivo}</td>
-                  <td>
+                  <td data-label="Fecha">{fmtFecha(m.created_at)}</td>
+                  <td data-label="Tipo">{m.tipo}</td>
+                  <td data-label="Cantidad" className={m.cantidad < 0 ? 'neg' : 'pos'}>{m.cantidad}</td>
+                  <td data-label="Saldo">{m.saldo_resultante}</td>
+                  <td data-label="Motivo">{m.motivo}</td>
+                  <td className="celda-acciones">
                     {(m.tipo === 'acumulacion' || m.tipo === 'canje') && (
                       <button onClick={() => reversar(m.id)}>Reversar</button>
                     )}
@@ -202,12 +202,12 @@ export default function Clientes() {
             <tbody>
               {detalle.ventas.map((v) => (
                 <tr key={v.id}>
-                  <td>{fmtFecha(v.created_at)}</td>
-                  <td>{v.id_externo}</td>
-                  <td>{v.volumen_litros}</td>
-                  <td>{v.puntos_otorgados}</td>
-                  <td>{v.placa || '-'}</td>
-                  <td>{v.origen}</td>
+                  <td data-label="Fecha">{fmtFecha(v.created_at)}</td>
+                  <td data-label="Factura">{v.id_externo}</td>
+                  <td data-label="Litros">{v.volumen_litros}</td>
+                  <td data-label="Puntos">{v.puntos_otorgados}</td>
+                  <td data-label="Placa">{v.placa || '-'}</td>
+                  <td data-label="Origen">{v.origen}</td>
                 </tr>
               ))}
             </tbody>

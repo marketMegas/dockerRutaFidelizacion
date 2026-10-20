@@ -98,21 +98,6 @@ export default function App() {
           ) : (
             <main className={`vista${vista === 'recompensas' ? ' vista--recompensas' : ''}`}>
               {error && <p className="error">{error}</p>}
-              {logueado && (
-                <div className="saludo-bloque">
-                  <div className="saludo-id">
-                    <span className="saludo">Hola</span>
-                    <div className="cabecera-nombre">
-                      <strong>{cliente?.nombre || cliente?.telefono || '...'}</strong>
-                      {cliente?.placas?.length > 1 ? (
-                        <span className="placa-chip">{cliente.placas.length} placas</span>
-                      ) : (
-                        cliente?.placa && <span className="placa-chip">{cliente.placa}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
               {seccion()}
             </main>
           )}

@@ -198,6 +198,26 @@ requiere desactivar SELinux.
 `./deploy/deploy.sh backup` genera un volcado en `backups/`. Programalo en cron si quieres
 respaldos automaticos.
 
+### 8. Endurecimiento: pendientes post-despliegue
+
+Ya estan activos: rate-limit del login admin por IP (`ADMIN_RATE_MAX`/`ADMIN_RATE_VENTANA`),
+CORS explicito (`CORS_ORIGINS`) y cabeceras de seguridad en `pwa/nginx.conf` y
+`panel/nginx.conf` (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
+
+Quedan **dos pasos manuales** que se hacen solo despues de confirmar SSL en el VPS
+(ambos afectan a los `nginx.conf` de panel y PWA):
+
+1. **HSTS**: agregar la cabecera, por ejemplo
+   `add_header Strict-Transport-Security "max-age=31536000" always;`
+   en cada `server {}`. Hasta ahora se omitio a proposito para no arriesgar un bloqueo
+   de HTTPS si el certificado falla.
+
+2. **CSP en modo estricto**: la CSP actual esta en modo `Report-Only`
+   (`Content-Security-Policy-Report-Only`, no bloquea). Revisa la consola del navegador
+   (PWA y panel) durante unos dias y, si no hay reportes, cambiarla a estricta:
+   reemplazar `Content-Security-Policy-Report-Only` por `Content-Security-Policy` en
+   `pwa/nginx.conf` y `panel/nginx.conf`.
+
 ## Integracion con Zencillo
 
 Al inicio corre en `ZENCILLO_MODO=simulador`. Para conectar con la plataforma de despacho,
