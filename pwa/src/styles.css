@@ -1212,19 +1212,31 @@ button.primario:active {
   min-width: 0;
 }
 
-/* Foto junto al titulo: ocupa el espacio libre de la fila del hero.
-   En movil sale del padding de `.login` para tocar de borde a borde. */
-.login-hero-banner {
-  display: block;
+/* Carrusel junto al titulo: en movil el recuadro sale del padding de `.login`
+   para tocar de borde a borde. El aspect-ratio es el de las fotos del hero
+   (6000x3375) para que el hueco exista antes de cargar y la pantalla no salte;
+   si entra una foto con otra forma hay que cambiar aqui el 16 / 9. */
+.login-hero-carrusel {
+  position: relative;
   width: calc(100% + 3rem);
   margin-inline: -1.5rem;
-  height: 224px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.login-hero-banner {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center;
-  border-radius: 0;
-  border: 0;
-  box-shadow: none;
-  background: var(--surface-track);
+  opacity: 0;
+}
+
+.login-hero-banner.activa {
+  opacity: 1;
 }
 
 .login-hero-label {
@@ -1400,6 +1412,53 @@ button.primario:active {
   outline-color: var(--menta);
 }
 
+/* Puntos del carrusel. Vienen despues de `.login button` porque esa regla
+   genérica pinta TODOS los botones del login de lima; sin este orden los
+   puntos saldrían como pastillas amarillas encima de la foto. */
+.login .login-hero-puntos {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.login .login-hero-puntos button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+}
+
+.login .login-hero-puntos button::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(8, 39, 112, 0.45);
+}
+
+.login .login-hero-puntos button.activo::before {
+  background: var(--lima);
+}
+
+.login .login-hero-puntos button:hover:not(:disabled) {
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+}
+
+.login .login-hero-puntos button:active:not(:disabled) {
+  transform: none;
+}
+
 .demo {
   background: var(--azul-claro);
   color: var(--azul-hondo);
@@ -1437,6 +1496,10 @@ button.primario:active {
   .login form,
   .login-premios {
     animation: aparecer 0.5s ease both;
+  }
+
+  .login-hero-banner {
+    transition: opacity 0.6s ease;
   }
 
   .login form {
@@ -1722,11 +1785,10 @@ button.primario:active {
     flex: 1 1 38%;
   }
 
-  .login-hero-banner {
-    flex: 0 0 58%;
+  .login-hero-carrusel {
+    flex: 0 0 66%;
     width: auto;
     margin-inline: 0;
-    height: 320px;
     border-radius: var(--radius-panel);
     border: 1px solid var(--linea);
     box-shadow: var(--sombra-card);

@@ -13,6 +13,12 @@ const TITULOS = {
   codigo: 'Verifica tu código',
 }
 
+const HEROES = [
+  'https://images.pexels.com/photos/40431732/pexels-photo-40431732.jpeg',
+  'https://images.pexels.com/photos/40431768/pexels-photo-40431768.jpeg',
+]
+const HERO_MS = 5000
+
 function formatearPlaca(valor) {
   const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '')
   const letras = limpio.replace(/[0-9]/g, '').slice(0, 3)
@@ -33,9 +39,16 @@ export default function Login({ onLogin }) {
   const [debug, setDebug] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
+  const [heroe, setHeroe] = useState(0)
 
   useEffect(() => {
     api('/recompensas').then(setRecompensas).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setHeroe((i) => (i + 1) % HEROES.length), HERO_MS)
+    return () => clearInterval(id)
   }, [])
 
   async function pedirCodigo(telefonoRegistro) {
@@ -122,13 +135,32 @@ export default function Login({ onLogin }) {
           <p>Suma puntos por cada litro que cargas y canjéalos por recompensas.</p>
         </div>
 
-        <img
-          className="login-hero-banner"
-          src="https://images.pexels.com/photos/40431732/pexels-photo-40431732.jpeg"
-          alt=""
-          decoding="async"
-          referrerPolicy="no-referrer"
-        />
+        <div className="login-hero-carrusel">
+          {HEROES.map((url, i) => (
+            <img
+              key={url}
+              className={`login-hero-banner${i === heroe ? ' activa' : ''}`}
+              src={url}
+              alt=""
+              decoding="async"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              referrerPolicy="no-referrer"
+            />
+          ))}
+
+          <div className="login-hero-puntos">
+            {HEROES.map((url, i) => (
+              <button
+                key={url}
+                type="button"
+                className={i === heroe ? 'activo' : ''}
+                onClick={() => setHeroe(i)}
+                aria-label={`Ver la foto ${i + 1} de ${HEROES.length}`}
+                aria-current={i === heroe}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
       {paso === 'placa' && (
