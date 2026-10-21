@@ -43,11 +43,11 @@ export default function Reportes() {
       <h2>Reportes</h2>
       {error && <p className="error">{error}</p>}
 
-      <h3>Ventas por dia (14 dias)</h3>
+      <h3>Ventas por día (14 días)</h3>
       <table>
         <thead>
           <tr>
-            <th>Dia</th>
+            <th>Día</th>
             <th>Ventas</th>
             <th>Litros</th>
             <th>Monto</th>
@@ -58,7 +58,7 @@ export default function Reportes() {
         <tbody>
           {ventas.map((v) => (
             <tr key={v.dia}>
-              <td data-label="Dia">{v.dia}</td>
+              <td data-label="Día">{v.dia}</td>
               <td data-label="Ventas">{v.cantidad}</td>
               <td data-label="Litros">{v.litros.toFixed(1)}</td>
               <td data-label="Monto">{v.monto.toLocaleString('es-CO')}</td>
@@ -84,7 +84,7 @@ export default function Reportes() {
       <form className="fila" onSubmit={buscar}>
         <input
           inputMode="numeric"
-          placeholder="Buscar por cedula del cliente"
+          placeholder="Buscar por cédula del cliente"
           value={cedula}
           onChange={(e) => setCedula(e.target.value.replace(/[^0-9]/g, ''))}
         />
@@ -106,7 +106,7 @@ export default function Reportes() {
           <tr>
             <th>Fecha</th>
             <th>Cliente</th>
-            <th>Cedula</th>
+            <th>Cédula</th>
             <th>Recompensa</th>
             <th>Puntos</th>
             <th>Estado</th>
@@ -118,7 +118,7 @@ export default function Reportes() {
             <tr key={c.id}>
               <td data-label="Fecha">{fmtFecha(c.created_at)}</td>
               <td data-label="Cliente">{c.cliente || '-'}</td>
-              <td data-label="Cedula">{c.cedula || '-'}</td>
+              <td data-label="Cédula">{c.cedula || '-'}</td>
               <td data-label="Recompensa">{c.recompensa || '-'}</td>
               <td data-label="Puntos">{c.puntos_costo}</td>
               <td data-label="Estado">{c.estado}</td>

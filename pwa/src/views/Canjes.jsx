@@ -4,7 +4,6 @@ import RecompensaCard from '../components/RecompensaCard.jsx'
 
 export default function Canjes({ cliente, refrescar }) {
   const [recompensas, setRecompensas] = useState([])
-  const [tasa, setTasa] = useState(0)
   const [misCanjes, setMisCanjes] = useState([])
   const [cargando, setCargando] = useState(true)
   const [mensaje, setMensaje] = useState('')
@@ -21,7 +20,6 @@ export default function Canjes({ cliente, refrescar }) {
 
   useEffect(() => {
     cargar()
-    api('/config').then((c) => setTasa(c.puntos_por_litro)).catch(() => {})
   }, [])
 
   async function canjear(r) {
@@ -29,7 +27,7 @@ export default function Canjes({ cliente, refrescar }) {
     setMensaje('')
     try {
       const res = await api('/canjes', { method: 'POST', body: { recompensa_id: r.id } })
-      setMensaje(`Canjeaste ${res.recompensa}. Presenta tu cedula para reclamarla.`)
+      setMensaje(`Canjeaste ${res.recompensa}. Presenta tu cédula para reclamarla.`)
       await refrescar()
       cargar()
     } catch (e) {
@@ -44,7 +42,7 @@ export default function Canjes({ cliente, refrescar }) {
       <h2>Recompensas</h2>
       <p className="muted">Tienes {puntos} puntos</p>
       {cliente && !cliente.cedula && (
-        <p className="error">Agrega tu cedula en Mis datos para poder reclamar recompensas.</p>
+        <p className="error">Agrega tu cédula en Mis datos para poder reclamar recompensas.</p>
       )}
       {mensaje && <p className="ok">{mensaje}</p>}
       {error && <p className="error">{error}</p>}
@@ -63,7 +61,7 @@ export default function Canjes({ cliente, refrescar }) {
           ))}
         </div>
       ) : recompensas.length === 0 ? (
-        <p className="vacio">Aun no hay recompensas disponibles</p>
+        <p className="vacio">Aún no hay recompensas disponibles</p>
       ) : (
         <div className="premios">
           {recompensas.map((r) => (
@@ -71,7 +69,6 @@ export default function Canjes({ cliente, refrescar }) {
               key={r.id}
               recompensa={r}
               puntos={puntos}
-              tasa={tasa}
               onCanjear={canjear}
             />
           ))}
@@ -89,7 +86,7 @@ export default function Canjes({ cliente, refrescar }) {
             <span className={`badge ${c.estado}`}>{c.estado}</span>
           </li>
         ))}
-        {misCanjes.length === 0 && <li className="muted">Aun no has canjeado recompensas</li>}
+        {misCanjes.length === 0 && <li className="muted">Aún no has canjeado recompensas</li>}
       </ul>
     </div>
   )

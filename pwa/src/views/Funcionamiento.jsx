@@ -1,46 +1,30 @@
-import { useEffect, useState } from 'react'
-import { api } from '../api.js'
-
 const PASOS = [
   {
     n: 1,
-    t: 'Registra tu placa y cedula',
-    d: 'Entra con la placa de tu vehiculo (3 letras y 3 numeros, ej. ABC123) y tu cedula. Si es tu primera vez, te enviamos un codigo al celular y tu cuenta queda creada.',
+    t: 'Registra tu placa y cédula',
+    d: 'Entra con la placa de tu vehículo (3 letras y 3 números, ej. ABC123). Si es tu primera vez, pediremos tu número de celular y te enviamos un código así tu cuenta queda creada.',
   },
   {
     n: 2,
     t: 'Carga g-max',
-    d: 'Al cargar en la estacion, la venta se asocia a tu cuenta con el telefono o la placa que registraste.',
+    d: 'Al cargar en la estación, la venta se asocia a tu cuenta con el teléfono o la placa que registraste.',
   },
   {
     n: 3,
     t: 'Suma puntos',
-    d: 'Cada litro cargado abona puntos segun la regla vigente de la estacion. Revisa tu saldo en Inicio.',
+    d: 'Cada litro cargado abona puntos según la regla vigente de la estación. Revisa tu saldo en Inicio.',
   },
   {
     n: 4,
     t: 'Canjea recompensas',
-    d: 'Cuando tengas puntos suficientes, canjea en Recompensas y presenta tu cedula para reclamarla.',
+    d: 'Cuando tengas puntos suficientes, canjea en Recompensas y presenta tu cédula para reclamarla.',
   },
 ]
 
 export default function Funcionamiento() {
-  const [tasa, setTasa] = useState(0)
-
-  useEffect(() => {
-    api('/config')
-      .then((c) => setTasa(c.puntos_por_litro))
-      .catch(() => {})
-  }, [])
-
   return (
     <div>
       <h2>Funcionamiento</h2>
-      <p className="muted">
-        {tasa > 0
-          ? `Ganas ${tasa} punto${tasa === 1 ? '' : 's'} por cada litro de glp.`
-          : 'Ganas puntos por cada litro de glp que cargas.'}
-      </p>
 
       <ol className="pasos">
         {PASOS.map((p) => (
@@ -60,10 +44,10 @@ export default function Funcionamiento() {
       <ul className="lista">
         <li>
           <div className="lista-info">
-            <strong>Tu placa acumula, tu cedula te identifica</strong>
+            <strong>Tu placa acumula, tu cédula te identifica</strong>
             <span className="muted">
               Cada vez que cargas con tu placa se acumulan puntos en tu cuenta (tu celular).
-              La cedula se presenta al reclamar recompensas.
+              La cédula se presenta al reclamar recompensas.
             </span>
           </div>
         </li>
@@ -76,12 +60,12 @@ export default function Funcionamiento() {
         <li>
           <div className="lista-info">
             <strong>Los puntos no vencen</strong>
-            <span className="muted">Acumulalos y canjealos cuando quieras.</span>
+            <span className="muted">Acumúlalos y canjéalos cuando quieras.</span>
           </div>
         </li>
         <li>
           <div className="lista-info">
-            <strong>Cambios de telefono</strong>
+            <strong>Cambios de teléfono</strong>
             <span className="muted">Entra con tu placa y registra el nuevo celular.</span>
           </div>
         </li>

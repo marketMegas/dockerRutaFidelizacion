@@ -3,9 +3,15 @@ import { api, setToken } from '../api.js'
 import RecompensaCard from '../components/RecompensaCard.jsx'
 
 const PLACA_RE = /^[A-Z]{3}[0-9]{3}$/
-const PLACA_MSG = 'La placa debe tener 3 letras y 3 numeros (ej. ABC123)'
+const PLACA_MSG = 'La placa debe tener 3 letras y 3 números (ej. ABC123)'
 const CEDULA_RE = /^[0-9]{6,10}$/
-const CEDULA_MSG = 'La cedula debe tener solo numeros (6 a 10)'
+const CEDULA_MSG = 'La cédula debe tener solo números (6 a 10)'
+
+const TITULOS = {
+  placa: 'Registra tu placa',
+  registro: 'Crea tu cuenta',
+  codigo: 'Verifica tu código',
+}
 
 function formatearPlaca(valor) {
   const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -16,7 +22,6 @@ function formatearPlaca(valor) {
 
 export default function Login({ onLogin }) {
   const [recompensas, setRecompensas] = useState([])
-  const [tasa, setTasa] = useState(0)
   const [paso, setPaso] = useState('placa')
   const [placa, setPlaca] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -31,7 +36,6 @@ export default function Login({ onLogin }) {
 
   useEffect(() => {
     api('/recompensas').then(setRecompensas).catch(() => {})
-    api('/config').then((c) => setTasa(c.puntos_por_litro)).catch(() => {})
   }, [])
 
   async function pedirCodigo(telefonoRegistro) {
@@ -110,17 +114,28 @@ export default function Login({ onLogin }) {
   return (
     <div className="login">
       <div className="login-hero">
-        <h1>
-          <span className="login-hero-label">Programa:</span>
-          Fidelización puntos g-max
-        </h1>
-        <p>Suma puntos por cada litro que cargas y canjealos por recompensas.</p>
+        <div className="login-hero-texto">
+          <h1>
+            <span className="login-hero-label">Programa:</span>
+            Fidelización puntos g-max
+          </h1>
+          <p>Suma puntos por cada litro que cargas y canjéalos por recompensas.</p>
+        </div>
+
+        <img
+          className="login-hero-banner"
+          src="https://images.pexels.com/photos/13320713/pexels-photo-13320713.jpeg"
+          alt=""
+          decoding="async"
+          referrerPolicy="no-referrer"
+        />
       </div>
 
       {paso === 'placa' && (
         <form onSubmit={consultarPlaca}>
+          <h2 className="login-panel-titulo">{TITULOS.placa}</h2>
           <label>
-            Numero de placa
+            Número de placa
             <input
               className="entrada-placa"
               placeholder="ABC123"
@@ -129,14 +144,14 @@ export default function Login({ onLogin }) {
               spellCheck={false}
               maxLength={6}
               pattern="[A-Za-z]{3}[0-9]{3}"
-              title="3 letras y 3 numeros (ej. ABC123)"
+              title="3 letras y 3 números (ej. ABC123)"
               aria-invalid={placa.length > 0 && !PLACA_RE.test(placa)}
               value={placa}
               onChange={(e) => setPlaca(formatearPlaca(e.target.value))}
               required
             />
           </label>
-          <p className="muted">Formato: 3 letras y 3 numeros (ABC123)</p>
+          <p className="muted">3 letras y 3 números (ABC123)</p>
           {error && <p className="error">{error}</p>}
           <button disabled={cargando}>{cargando ? 'Consultando...' : 'Continuar'}</button>
         </form>
@@ -144,9 +159,10 @@ export default function Login({ onLogin }) {
 
       {paso === 'registro' && (
         <form onSubmit={registrar}>
-          <p className="muted">No encontramos tu placa. Registrate para empezar.</p>
+          <h2 className="login-panel-titulo">{TITULOS.registro}</h2>
+          <p className="muted">No encontramos tu placa. Regístrate para empezar.</p>
           <label>
-            Numero de celular
+            Número de celular
             <input
               inputMode="tel"
               placeholder="300 000 0000"
@@ -156,7 +172,7 @@ export default function Login({ onLogin }) {
             />
           </label>
           <label>
-            Numero de cedula
+            Número de cédula
             <input
               inputMode="numeric"
               placeholder="1098765432"
@@ -165,13 +181,13 @@ export default function Login({ onLogin }) {
               required
             />
           </label>
-          <p className="muted">La cedula identifica tu cuenta al reclamar recompensas.</p>
+          <p className="muted">La cédula identifica tu cuenta al reclamar recompensas.</p>
           <label>
             Tu nombre
             <input placeholder="Opcional" value={nombre} onChange={(e) => setNombre(e.target.value)} />
           </label>
           {error && <p className="error">{error}</p>}
-          <button disabled={cargando}>{cargando ? 'Enviando...' : 'Recibir codigo'}</button>
+          <button disabled={cargando}>{cargando ? 'Enviando...' : 'Recibir código'}</button>
           <button type="button" className="link" onClick={() => setPaso('placa')}>
             Cambiar placa
           </button>
@@ -180,11 +196,13 @@ export default function Login({ onLogin }) {
 
       {paso === 'codigo' && (
         <form onSubmit={verificar}>
-          <p className="muted">Enviamos un codigo al celular {telefonoParcial}.</p>
+          <h2 className="login-panel-titulo">{TITULOS.codigo}</h2>
+          <p className="muted">Enviamos un código al celular {telefonoParcial}.</p>
           {aviso && <p className="ok">{aviso}</p>}
           <label>
-            Codigo de verificacion
+            Código de verificación
             <input
+              className="otp"
               inputMode="numeric"
               maxLength="6"
               placeholder="000000"
@@ -193,7 +211,7 @@ export default function Login({ onLogin }) {
               required
             />
           </label>
-          {debug && <p className="demo">Codigo de prueba: {debug}</p>}
+          {debug && <p className="demo">Código de prueba: {debug}</p>}
           {error && <p className="error">{error}</p>}
           <button disabled={cargando}>{cargando ? 'Verificando...' : 'Entrar'}</button>
           <button type="button" className="link" onClick={() => setPaso('placa')}>
@@ -207,7 +225,7 @@ export default function Login({ onLogin }) {
           <h2>Recompensas</h2>
           <div className="premios">
             {recompensas.map((r) => (
-              <RecompensaCard key={r.id} recompensa={r} tasa={tasa} mostrarProgreso={false} sobreVerde />
+              <RecompensaCard key={r.id} recompensa={r} mostrarProgreso={false} sobreVerde />
             ))}
           </div>
         </section>

@@ -32,7 +32,7 @@ export default function Login({ onLogin }) {
           <input value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" />
         </label>
         <label>
-          Contrasena
+          Contraseña
           <input
             type="password"
             value={password}

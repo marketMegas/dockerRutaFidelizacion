@@ -62,7 +62,7 @@ h4 {
 
 .layout {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 250px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -139,6 +139,8 @@ h4 {
 .contenido {
   padding: 2rem 2.5rem;
   max-width: 1200px;
+  /* Las tablas en modo columna no pueden bajar de su min-content; sin scroll propio se cortarian */
+  overflow-x: auto;
 }
 
 .grid {
@@ -237,6 +239,19 @@ form.fila button:hover,
   color: #fff;
 }
 
+/* Regla activa: boton naranja. El texto oscuro mantiene la legibilidad sobre el naranja */
+button.activada {
+  background: var(--orange);
+  border-color: var(--orange-2);
+  color: var(--text);
+}
+
+button.activada:hover {
+  background: var(--orange-2);
+  border-color: var(--orange-2);
+  color: var(--text);
+}
+
 td button + button {
   margin-left: 0;
 }
@@ -282,8 +297,8 @@ td button + button {
 
 .miniatura {
   display: block;
-  width: 130px;
-  height: 86px;
+  width: 220px;
+  height: 147px;
   border-radius: 8px;
   object-fit: cover;
   background: #eef7ea;
@@ -292,6 +307,89 @@ td button + button {
 
 .miniatura-vacia {
   background: repeating-linear-gradient(45deg, #eef7ea 0 6px, #e3f1dc 6px 12px);
+}
+
+/* La edicion se despliega como un panel: una sola celda que ocupa todas las
+   columnas. Meter los inputs dentro de cada columna hacia la tabla mas ancha
+   que el contenedor y los botones "Guardar/Cancelar" quedan fuera de pantalla. */
+
+.celda-edicion {
+  padding: 1rem 0.85rem;
+  background: #f7fbf5;
+}
+
+.form-edicion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.7rem 1rem;
+  align-items: end;
+}
+
+.form-edicion-titulo {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--green-3);
+}
+
+.form-edicion label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.form-edicion input {
+  min-width: 0;
+  width: 100%;
+}
+
+.form-edicion .campo-imagen {
+  grid-column: span 2;
+}
+
+.form-edicion .campo-imagen-fila {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.form-edicion .miniatura-edicion {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: #eef7ea;
+}
+
+.form-edicion .campo-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 42px;
+}
+
+.form-edicion .campo-check input {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.form-edicion .acciones {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.form-edicion .acciones button {
+  min-height: 40px;
+  min-width: 120px;
 }
 
 button:disabled {
@@ -456,7 +554,7 @@ tbody tr:hover td {
 
 @media (max-width: 760px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .sidebar {
     position: static;
@@ -464,20 +562,22 @@ tbody tr:hover td {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    min-width: 0;
   }
   .brand {
     border: 0;
     margin: 0;
     flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .sidebar nav {
     flex-basis: 100%;
     flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    min-width: 0;
     gap: 0.3rem;
     padding-bottom: 0.25rem;
-    -webkit-overflow-scrolling: touch;
   }
   .sidebar nav button {
     flex: 0 0 auto;
@@ -495,10 +595,10 @@ tbody tr:hover td {
     padding: 0.3rem 0.5rem;
     font-size: 0.78rem;
   }
-  /* Imagen de recompensa mas grande en pantalla pequena */
+  /* En pantalla pequena la miniatura ocupa todo el ancho de la tarjeta */
   tbody td .miniatura {
     width: 100%;
-    max-width: 240px;
+    max-width: none;
     height: 160px;
   }
   /* Todas las tablas se adaptan a pantalla pequena como tarjetas apiladas */
@@ -552,12 +652,32 @@ tbody tr:hover td {
   tbody td[colspan]::before {
     content: none;
   }
+  /* El panel de edicion se mantiene a la izquierda y sin centrado */
+  tbody td.celda-edicion {
+    display: block;
+    text-align: left;
+    padding: 0.85rem 0.75rem;
+  }
+  tbody td.celda-edicion .form-edicion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  tbody td.celda-edicion .form-edicion .campo-imagen {
+    grid-column: auto;
+  }
+  tbody td.celda-edicion .acciones {
+    justify-content: stretch;
+  }
+  tbody td.celda-edicion .acciones button {
+    flex: 1 1 auto;
+  }
   tbody td.celda-acciones {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.4rem;
+    min-width: 0;
+    white-space: normal;
   }
   tbody td.celda-acciones::before {
     content: none;
@@ -585,6 +705,13 @@ tbody tr:hover td {
     display: block;
   }
   tbody td.celda-barra::before {
+    content: none;
+  }
+  /* En modo tarjeta la miniatura se explica sola: sin etiqueta "Imagen" */
+  tbody td.celda-imagen {
+    display: block;
+  }
+  tbody td.celda-imagen::before {
     content: none;
   }
   tbody td.celda-barra .barra {
@@ -618,8 +745,8 @@ tbody tr:hover td {
     font-size: 0.72rem;
   }
   tbody td .miniatura {
-    max-width: 150px;
-    height: 100px;
+    max-width: none;
+    height: 130px;
   }
   .reglas-acciones button {
     min-height: 34px;

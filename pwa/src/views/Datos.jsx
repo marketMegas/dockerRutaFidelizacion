@@ -11,7 +11,7 @@ export default function Datos({ cliente, refrescar }) {
   const placas = cliente.placas?.length ? cliente.placas : cliente.placa ? [cliente.placa] : []
 
   const filas = [
-    { k: 'Cedula', v: cliente.cedula || '-' },
+    { k: 'Cédula', v: cliente.cedula || '-' },
     { k: 'Celular', v: cliente.telefono },
     { k: 'Nombre', v: cliente.nombre || '-' },
   ]
@@ -45,7 +45,7 @@ export default function Datos({ cliente, refrescar }) {
       {!cliente.cedula && (
         <form className="cedula-pendiente" onSubmit={guardarCedula}>
           <p className="muted">
-            Necesitamos tu cedula para reclamar recompensas. Agregala para poder canjear.
+            Necesitamos tu cédula para reclamar recompensas. Agrégala para poder canjear.
           </p>
           <div className="fila">
             <input
@@ -55,7 +55,7 @@ export default function Datos({ cliente, refrescar }) {
               onChange={(e) => setCedula(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
               required
             />
-            <button disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar cedula'}</button>
+            <button disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar cédula'}</button>
           </div>
           {error && <p className="error">{error}</p>}
         </form>
@@ -70,7 +70,7 @@ export default function Datos({ cliente, refrescar }) {
             </div>
           </li>
         ))}
-        {placas.length === 0 && <li className="muted">Aun no tienes placas registradas</li>}
+        {placas.length === 0 && <li className="muted">Aún no tienes placas registradas</li>}
       </ul>
 
       <ul className="lista">

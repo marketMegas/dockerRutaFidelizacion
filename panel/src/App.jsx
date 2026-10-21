@@ -43,7 +43,7 @@ export default function App() {
           ))}
         </nav>
         <button className="salir" onClick={salir}>
-          Cerrar sesion
+          Cerrar sesión
         </button>
       </aside>
       <main className="contenido">

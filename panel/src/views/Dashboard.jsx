@@ -14,7 +14,7 @@ export default function Dashboard() {
 
   const tarjetas = [
     { t: 'Clientes', v: resumen.total_clientes, s: `${resumen.clientes_nuevos_mes} nuevos este mes` },
-    { t: 'Puntos activos', v: resumen.puntos_activos, s: 'saldo en circulacion' },
+    { t: 'Puntos activos', v: resumen.puntos_activos, s: 'saldo en circulación' },
     { t: 'Puntos del mes', v: resumen.puntos_acumulados_mes, s: `${resumen.puntos_canjeados_mes} canjeados` },
     { t: 'Ventas hoy', v: resumen.ventas_hoy.cantidad, s: `${resumen.ventas_hoy.litros.toFixed(1)} L` },
     { t: 'Ventas del mes', v: resumen.ventas_mes.cantidad, s: `${resumen.ventas_mes.litros.toFixed(1)} L` },

@@ -36,7 +36,7 @@ export default function Historial() {
             </span>
           </li>
         ))}
-        {movs.length === 0 && <li className="muted">Todavia no tienes movimientos</li>}
+        {movs.length === 0 && <li className="muted">Todavía no tienes movimientos</li>}
       </ul>
     </div>
   )

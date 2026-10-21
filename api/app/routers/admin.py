@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -326,6 +326,10 @@ def _validar_rango(desde: datetime | None, hasta: datetime | None) -> None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "La fecha 'desde' no puede ser posterior a 'hasta'")
 
 
+def _dejar_una_sola_activa(db: Session, regla_id: int) -> None:
+    db.execute(update(Regla).where(Regla.id != regla_id).values(activa=False))
+
+
 @router.post("/reglas", status_code=status.HTTP_201_CREATED)
 def crear_regla(body: ReglaIn, db: Session = Depends(get_db)):
     existe = db.scalar(select(Regla).where(Regla.nombre == body.nombre))
@@ -334,6 +338,9 @@ def crear_regla(body: ReglaIn, db: Session = Depends(get_db)):
     _validar_rango(body.desde, body.hasta)
     regla = Regla(**body.model_dump())
     db.add(regla)
+    db.flush()
+    if regla.activa:
+        _dejar_una_sola_activa(db, regla.id)
     db.commit()
     db.refresh(regla)
     return {"id": regla.id, "nombre": regla.nombre}
@@ -359,6 +366,8 @@ def actualizar_regla(regla_id: int, body: ReglaPatchIn, db: Session = Depends(ge
 
     for campo, valor in datos.items():
         setattr(regla, campo, valor)
+    if regla.activa:
+        _dejar_una_sola_activa(db, regla.id)
     db.commit()
     return {"id": regla.id, "nombre": regla.nombre, "activa": regla.activa}
 

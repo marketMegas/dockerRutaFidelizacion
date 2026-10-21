@@ -34,7 +34,7 @@ export default function Sidebar({ cliente, vista, onNavegar, onSalir }) {
           <span className="saludo">Hola</span>
           <strong>{cliente?.nombre || 'Cliente'}</strong>
           <span className="muted">{cliente?.telefono || '-'}</span>
-          <span className="muted">{cliente?.cedula ? `C.C. ${cliente.cedula}` : 'Sin cedula'}</span>
+          <span className="muted">{cliente?.cedula ? `C.C. ${cliente.cedula}` : 'Sin cédula'}</span>
         </div>
       </div>
 
@@ -57,12 +57,12 @@ export default function Sidebar({ cliente, vista, onNavegar, onSalir }) {
         {PRINCIPAL.map(item)}
       </nav>
 
-      <nav className="sidebar-nav sidebar-nav--sec" aria-label="Mas informacion">
+      <nav className="sidebar-nav sidebar-nav--sec" aria-label="Más información">
         {SECUNDARIO.map(item)}
       </nav>
 
       <button type="button" className="sidebar-salir" onClick={onSalir}>
-        Cerrar sesion
+        Cerrar sesión
       </button>
     </aside>
   )

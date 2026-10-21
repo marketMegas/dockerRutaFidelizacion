@@ -95,7 +95,7 @@ export default function Recompensas() {
   return (
     <div>
       <h2>Recompensas</h2>
-      <p className="muted">La imagen es una URL publica que se mostrara en la tarjeta de recompensas del usuario.</p>
+      <p className="muted">La imagen es una URL pública que se mostrará en la tarjeta de recompensas del usuario.</p>
       {error && <p className="error">{error}</p>}
 
       <table>
@@ -103,7 +103,7 @@ export default function Recompensas() {
           <tr>
             <th>Imagen</th>
             <th>Nombre</th>
-            <th>Descripcion</th>
+            <th>Descripción</th>
             <th>Costo (pts)</th>
             <th>Stock</th>
             <th>Estado</th>
@@ -114,54 +114,84 @@ export default function Recompensas() {
           {items.map((r) => {
             if (editando === r.id) {
               return (
-                <tr key={r.id}>
-                  <td data-label="Imagen">
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      value={edit.imagen}
-                      onChange={cambiar(setEdit, 'imagen')}
-                    />
-                  </td>
-                  <td data-label="Nombre">
-                    <input value={edit.nombre} onChange={cambiar(setEdit, 'nombre')} required />
-                  </td>
-                  <td data-label="Descripcion">
-                    <input value={edit.descripcion} onChange={cambiar(setEdit, 'descripcion')} />
-                  </td>
-                  <td data-label="Costo (pts)">
-                    <input
-                      type="number"
-                      min="1"
-                      value={edit.costo_puntos}
-                      onChange={cambiar(setEdit, 'costo_puntos')}
-                    />
-                  </td>
-                  <td data-label="Stock">
-                    <input
-                      type="number"
-                      min="0"
-                      value={edit.stock}
-                      onChange={cambiar(setEdit, 'stock')}
-                    />
-                  </td>
-                  <td data-label="Activa">
-                    <input
-                      type="checkbox"
-                      checked={!!edit.activa}
-                      onChange={(e) => setEdit({ ...edit, activa: e.target.checked })}
-                    />
-                  </td>
-                  <td className="celda-acciones">
-                    <button onClick={guardar}>Guardar</button>
-                    <button onClick={cancelar}>Cancelar</button>
+                <tr key={r.id} className="fila-edicion">
+                  <td colSpan={7} className="celda-edicion">
+                    <div className="form-edicion">
+                      <p className="form-edicion-titulo">Editando recompensa</p>
+
+                      <label className="campo-imagen">
+                        <span>Imagen (URL)</span>
+                        <div className="campo-imagen-fila">
+                          {edit.imagen ? (
+                            <img
+                              className="miniatura-edicion"
+                              src={edit.imagen}
+                              alt=""
+                              onError={(e) => {
+                                e.currentTarget.style.visibility = 'hidden'
+                              }}
+                            />
+                          ) : null}
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={edit.imagen}
+                            onChange={cambiar(setEdit, 'imagen')}
+                          />
+                        </div>
+                      </label>
+
+                      <label>
+                        <span>Nombre</span>
+                        <input value={edit.nombre} onChange={cambiar(setEdit, 'nombre')} required />
+                      </label>
+
+                      <label>
+                        <span>Descripción</span>
+                        <input value={edit.descripcion} onChange={cambiar(setEdit, 'descripcion')} />
+                      </label>
+
+                      <label>
+                        <span>Costo (pts)</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={edit.costo_puntos}
+                          onChange={cambiar(setEdit, 'costo_puntos')}
+                        />
+                      </label>
+
+                      <label>
+                        <span>Stock</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={edit.stock}
+                          onChange={cambiar(setEdit, 'stock')}
+                        />
+                      </label>
+
+                      <label className="campo-check">
+                        <span>Activa</span>
+                        <input
+                          type="checkbox"
+                          checked={!!edit.activa}
+                          onChange={(e) => setEdit({ ...edit, activa: e.target.checked })}
+                        />
+                      </label>
+
+                      <div className="acciones">
+                        <button onClick={guardar}>Guardar</button>
+                        <button onClick={cancelar}>Cancelar</button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               )
             }
             return (
               <tr key={r.id}>
-                <td data-label="Imagen">
+                <td className="celda-imagen" data-label="Imagen">
                   {r.imagen ? (
                     <img className="miniatura" src={r.imagen} alt="" />
                   ) : (
@@ -169,7 +199,7 @@ export default function Recompensas() {
                   )}
                 </td>
                 <td data-label="Nombre">{r.nombre}</td>
-                <td data-label="Descripcion">{r.descripcion || '-'}</td>
+                <td data-label="Descripción">{r.descripcion || '-'}</td>
                 <td data-label="Costo (pts)">{r.costo_puntos}</td>
                 <td data-label="Stock">{r.stock}</td>
                 <td data-label="Estado">{r.activa ? 'Activa' : 'Inactiva'}</td>
@@ -192,7 +222,7 @@ export default function Recompensas() {
           required
         />
         <input
-          placeholder="Descripcion"
+          placeholder="Descripción"
           value={form.descripcion}
           onChange={cambiar(setForm, 'descripcion')}
         />

@@ -375,6 +375,50 @@ h2::after {
   padding: 1.25rem 1.15rem 2rem;
 }
 
+/* ---------- Pie de pagina ---------- */
+
+.pie-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1.1rem 1rem calc(1.1rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--linea);
+  background: var(--fondo);
+  color: var(--muted);
+  text-align: center;
+}
+
+.pie-app-marca {
+  font-family: var(--display);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--verde-hondo);
+}
+
+.pie-app-link {
+  border: 0;
+  background: transparent;
+  padding: 0.15rem 0.2rem;
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--verde-hondo);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.pie-app-link:hover {
+  color: var(--verde-2);
+}
+
+.pie-app-link:focus-visible {
+  outline: 2px solid var(--verde);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* ---------- Tabs ---------- */
 
 .tabs {
@@ -550,17 +594,8 @@ h2::after {
   box-shadow: var(--sombra-card);
 }
 
-.saldo::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(rgba(27, 77, 36, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(27, 77, 36, 0.06) 1px, transparent 1px);
-  background-size: 26px 26px;
-  pointer-events: none;
-}
-
 /* Chip de tarjeta de contacto */
+
 .saldo-v {
   position: relative;
   font-family: var(--display);
@@ -876,19 +911,6 @@ button.primario:active {
   color: var(--muted);
 }
 
-.premio-litros {
-  margin: auto 0 0;
-  font-size: 0.74rem;
-  color: var(--muted);
-}
-
-.premio-litros strong {
-  font-family: var(--display);
-  font-size: 0.95rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--tinta);
-}
-
 .premio-pie {
   display: flex;
   align-items: center;
@@ -947,35 +969,21 @@ button.primario:active {
   cursor: not-allowed;
 }
 
-/* Medidor estilo tanque: el nivel es la llama */
+/* Medidor plano, igual que la barra de Reportes: pista clara + relleno degradado */
 
 .medidor {
   position: relative;
   margin-top: auto;
-  height: 9px;
-  border-radius: 999px;
+  height: 8px;
+  border-radius: 4px;
   background: var(--surface-track);
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(20, 61, 28, 0.16);
-}
-
-.medidor::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0 calc(10% - 2px),
-    rgba(255, 255, 255, 0.9) calc(10% - 2px) 10%
-  );
-  pointer-events: none;
 }
 
 .nivel {
   display: block;
   height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--naranja), var(--naranja-hondo));
+  background: linear-gradient(90deg, var(--verde), var(--naranja));
   transition: width 0.4s ease;
 }
 
@@ -988,13 +996,11 @@ button.primario:active {
   min-height: 112px;
 }
 
-.premio-card--verde .premio-nombre,
-.premio-card--verde .premio-litros strong {
+.premio-card--verde .premio-nombre {
   color: var(--tinta);
 }
 
-.premio-card--verde .premio-desc,
-.premio-card--verde .premio-litros {
+.premio-card--verde .premio-desc {
   color: var(--muted);
 }
 
@@ -1195,6 +1201,30 @@ button.primario:active {
   position: relative;
   text-align: center;
   color: var(--tinta);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.login-hero-texto {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Foto junto al titulo: ocupa el espacio libre de la fila del hero.
+   En movil sale del padding de `.login` para tocar de borde a borde. */
+.login-hero-banner {
+  display: block;
+  width: calc(100% + 3rem);
+  margin-inline: -1.5rem;
+  height: 224px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+  background: var(--surface-track);
 }
 
 .login-hero-label {
@@ -1229,20 +1259,38 @@ button.primario:active {
   border: 1px solid var(--linea);
   border-radius: var(--radius-panel);
   border-top: 4px solid var(--placa);
-  padding: 1.5rem;
+  padding: 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.75rem;
   box-shadow: var(--sombra-card);
+}
+
+/* Titulo del paso: la tarjeta es un panel, no un bloque suelto */
+.login .login-panel-titulo {
+  display: block;
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  color: var(--tinta);
+}
+
+.login .login-panel-titulo::after {
+  content: none;
 }
 
 .login label {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.82rem;
+  gap: 0.3rem;
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--muted);
+}
+
+.login .muted {
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 .login input {
@@ -1264,16 +1312,17 @@ button.primario:active {
 
 .login .entrada-placa {
   font-family: var(--display);
-  font-size: 1.9rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
   text-transform: uppercase;
   text-align: center;
   background: var(--placa);
   color: var(--placa-tinta);
   border: 0;
   border-radius: var(--radius-ctrl);
-  padding: 0.45em 0.6em 0.35em;
+  padding: 0.38em 0.4em 0.3em;
   box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16);
   caret-color: var(--placa-tinta);
 }
@@ -1289,12 +1338,13 @@ button.primario:active {
 
 /* Codigo OTP: digitos espaciados */
 
-.login input[inputmode='numeric'] {
+.login input.otp {
   font-family: var(--display);
   font-variant-numeric: tabular-nums;
   text-align: center;
-  letter-spacing: 0.45em;
-  font-size: 1.2rem;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  font-size: 1.05rem;
   font-weight: 700;
 }
 
@@ -1303,8 +1353,9 @@ button.primario:active {
   color: var(--placa-tinta);
   border: 0;
   border-radius: 12px;
-  padding: 0.85rem;
+  padding: 0.7rem;
   font: inherit;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   touch-action: manipulation;
@@ -1449,6 +1500,11 @@ button.primario:active {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.sidebar-id .saludo {
+  font-size: 1.3rem;
+  line-height: 1.1;
 }
 
 .sidebar-id strong {
@@ -1627,13 +1683,70 @@ button.primario:active {
     margin-inline: auto;
   }
 
+  /* El login de escritorio es un panel lateral + contenido */
   .login {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-areas:
+      'panel hero'
+      'panel premios';
+    column-gap: 2.75rem;
+    row-gap: 1.75rem;
+    align-content: start;
+    align-items: start;
     padding: 2.5rem;
     padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
   }
 
+  /* En grid el centrado vertical automatico estira las filas: se anula */
+  .login > :first-child,
+  .login > :last-child {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   .login > * {
-    max-width: 520px;
+    max-width: none;
+  }
+
+  .login-hero {
+    grid-area: hero;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: left;
+  }
+
+  .login-hero-texto {
+    flex: 1 1 38%;
+  }
+
+  .login-hero-banner {
+    flex: 0 0 58%;
+    width: auto;
+    margin-inline: 0;
+    height: 320px;
+    border-radius: var(--radius-panel);
+    border: 1px solid var(--linea);
+    box-shadow: var(--sombra-card);
+  }
+
+  /* El titulo cede tamano para que la foto sea el bloque dominante del hero */
+  .login-hero h1 {
+    font-size: 2.1rem;
+  }
+
+  /* El formulario es el sidebar: columna angosta pegada a la izquierda */
+  .login form {
+    grid-area: panel;
+    align-self: start;
+    position: sticky;
+    top: calc(var(--alto-nav) + 1rem);
+    padding: 1rem;
+  }
+
+  .login-premios {
+    grid-area: premios;
   }
 
   /* Barra inferior de ancho completo, acciones centradas */
@@ -1783,11 +1896,22 @@ button.primario:active {
   background: transparent;
 }
 
+.vista.vista--recompensas .premio-media img {
+  filter: saturate(1.06) brightness(0.92);
+}
+
+/* Doble velo: header arriba y pie abajo; la foto respira en la franja central */
 .vista.vista--recompensas .premio-media::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(11, 32, 16, 0.1) 0%, rgba(11, 32, 16, 0.62) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 20, 11, 0.68) 0%,
+    rgba(8, 20, 11, 0.18) 30%,
+    rgba(8, 20, 11, 0.6) 58%,
+    rgba(8, 20, 11, 0.92) 100%
+  );
 }
 
 .vista.vista--recompensas .premio-cuerpo {
@@ -1805,36 +1929,62 @@ button.primario:active {
   align-items: flex-start;
 }
 
+/* Halo suave: separa el blanco del detalle de la foto */
+.vista.vista--recompensas .premio-card {
+  --halo: 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 18px rgba(0, 0, 0, 0.5);
+}
+
 .vista.vista--recompensas .premio-nombre {
   color: #fff;
-  font-size: 1rem;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  text-shadow: var(--halo);
 }
 
 .vista.vista--recompensas .premio-costo {
   color: #fff;
+  text-shadow: var(--halo);
 }
 
 .vista.vista--recompensas .premio-costo strong {
-  font-size: 1.4rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: var(--halo);
 }
 
+.vista.vista--recompensas .premio-costo-u {
+  background: rgba(8, 20, 11, 0.8);
+  color: #fff;
+  text-shadow: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Descripcion y litros: sobre la foto, siempre en blanco */
 .vista.vista--recompensas .premio-desc {
   margin-top: auto;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.78rem;
-}
-
-.vista.vista--recompensas .premio-litros {
-  margin: 0.15rem 0 0;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.76rem;
-}
-
-.vista.vista--recompensas .premio-litros strong {
   color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-shadow: var(--halo);
+}
+
+/* El estado ("Te faltan X pts") tambien va sobre la foto */
+.vista.vista--recompensas .premio-estado {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: var(--halo);
+}
+
+.vista.vista--recompensas .premio-estado.listo {
+  background: rgba(8, 20, 11, 0.8);
+  color: #fff;
+  text-shadow: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.vista.vista--recompensas .medidor {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .vista.vista--recompensas .premio-card--agotado {

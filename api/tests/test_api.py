@@ -133,7 +133,17 @@ def test_config_publico(client, admin_headers):
 
     client.put(f"{PREFIX}/admin/reglas/{regla_id}", json={"activa": False}, headers=admin_headers)
     cfg = client.get(f"{PREFIX}/config")
-    assert cfg.json()["puntos_por_litro"] == 1.0
+    assert cfg.json()["puntos_por_litro"] == 0.0
+
+
+def test_solo_una_regla_activa(client, admin_headers):
+    [base_id] = _ids_activas(client, admin_headers)
+
+    promo = _crear_regla(client, admin_headers, "Promo switch", puntos_por_litro=3.0)
+    assert _ids_activas(client, admin_headers) == [promo]
+
+    client.put(f"{PREFIX}/admin/reglas/{base_id}", json={"activa": True}, headers=admin_headers)
+    assert _ids_activas(client, admin_headers) == [base_id]
 
 
 def _crear_regla(client, admin_headers, nombre, **campos):
@@ -142,6 +152,11 @@ def _crear_regla(client, admin_headers, nombre, **campos):
     resp = client.post(f"{PREFIX}/admin/reglas", json=body, headers=admin_headers)
     assert resp.status_code == 201, resp.text
     return resp.json()["id"]
+
+
+def _ids_activas(client, admin_headers):
+    reglas = client.get(f"{PREFIX}/admin/reglas", headers=admin_headers).json()
+    return [r["id"] for r in reglas if r["activa"]]
 
 
 def _ver_regla(client, admin_headers, regla_id):

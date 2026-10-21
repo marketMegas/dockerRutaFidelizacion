@@ -104,6 +104,18 @@ export default function App() {
         </div>
       </div>
 
+      <footer className="pie-app">
+        <span className="pie-app-marca">Fidelización PUNTOS G-MAX</span>
+        <a
+          className="pie-app-link"
+          href="/Politica%20de%20Datos%20personales%20-%20Megas.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Políticas de privacidad
+        </a>
+      </footer>
+
       {conTabsCliente && (
         <nav className="tabs" aria-label="Mi cuenta">
           {TABS_CLIENTE.map((t) => (

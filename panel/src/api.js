@@ -27,7 +27,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   if (res.status === 401 && !path.includes('/auth/')) {
     setToken('')
     window.location.reload()
-    throw new Error('Sesion expirada')
+    throw new Error('Sesión expirada')
   }
   if (!res.ok) {
     const detalle = Array.isArray(data.detail) ? data.detail.map((d) => d.msg).join(', ') : data.detail

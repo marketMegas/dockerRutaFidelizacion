@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, fmtFecha } from '../api.js'
 
-const VACIA = { nombre: '', puntos_por_litro: 1, prioridad: 0, activa: true, desde: '', hasta: '' }
+const VACIA = { nombre: '', puntos_por_litro: 1, activa: true, desde: '', hasta: '' }
 
 function aLocal(iso) {
   if (!iso) return ''
@@ -53,7 +53,6 @@ export default function Reglas() {
         body: {
           nombre: form.nombre,
           puntos_por_litro: Number(form.puntos_por_litro),
-          prioridad: Number(form.prioridad),
           activa: true,
           desde: aFecha(form.desde),
           hasta: aFecha(form.hasta),
@@ -85,7 +84,6 @@ export default function Reglas() {
     setEdit({
       nombre: r.nombre,
       puntos_por_litro: r.puntos_por_litro,
-      prioridad: r.prioridad,
       activa: r.activa,
       desde: aLocal(r.desde),
       hasta: aLocal(r.hasta),
@@ -105,7 +103,6 @@ export default function Reglas() {
         body: {
           nombre: edit.nombre,
           puntos_por_litro: Number(edit.puntos_por_litro),
-          prioridad: Number(edit.prioridad),
           activa: !!edit.activa,
           desde: aUtc(edit.desde),
           hasta: aUtc(edit.hasta),
@@ -122,7 +119,7 @@ export default function Reglas() {
   return (
     <div>
       <h2>Reglas de puntos</h2>
-      <p className="muted">Los puntos se calculan por litro. Gana la regla activa con mayor prioridad.</p>
+      <p className="muted">Los puntos se calculan por litro. Solo puede haber una regla activa a la vez.</p>
       {mensaje && <p className="ok">{mensaje}</p>}
       {error && <p className="error">{error}</p>}
 
@@ -131,7 +128,6 @@ export default function Reglas() {
           <tr>
             <th>Nombre</th>
             <th>Puntos / litro</th>
-            <th>Prioridad</th>
             <th>Desde</th>
             <th>Hasta</th>
             <th>Estado</th>
@@ -142,39 +138,58 @@ export default function Reglas() {
           {reglas.map((r) => {
             if (editando === r.id) {
               return (
-                <tr key={r.id}>
-                  <td data-label="Nombre">
-                    <input value={edit.nombre} onChange={cambiar(setEdit, 'nombre')} required />
-                  </td>
-                  <td data-label="Puntos / litro">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={edit.puntos_por_litro}
-                      onChange={cambiar(setEdit, 'puntos_por_litro')}
-                    />
-                  </td>
-                  <td data-label="Prioridad">
-                    <input type="number" value={edit.prioridad} onChange={cambiar(setEdit, 'prioridad')} />
-                  </td>
-                  <td data-label="Desde">
-                    <input type="datetime-local" value={edit.desde} onChange={cambiar(setEdit, 'desde')} />
-                  </td>
-                  <td data-label="Hasta">
-                    <input type="datetime-local" value={edit.hasta} onChange={cambiar(setEdit, 'hasta')} />
-                  </td>
-                  <td data-label="Estado">
-                    <input
-                      type="checkbox"
-                      checked={!!edit.activa}
-                      onChange={(e) => setEdit({ ...edit, activa: e.target.checked })}
-                    />
-                  </td>
-                  <td className="celda-acciones" data-label="Acciones">
-                    <div className="reglas-acciones">
-                      <button onClick={guardar}>Guardar</button>
-                      <button onClick={cancelar}>Cancelar</button>
+                <tr key={r.id} className="fila-edicion">
+                  <td colSpan={6} className="celda-edicion">
+                    <div className="form-edicion">
+                      <p className="form-edicion-titulo">Editando regla</p>
+
+                      <label>
+                        <span>Nombre</span>
+                        <input value={edit.nombre} onChange={cambiar(setEdit, 'nombre')} required />
+                      </label>
+
+                      <label>
+                        <span>Puntos / litro</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={edit.puntos_por_litro}
+                          onChange={cambiar(setEdit, 'puntos_por_litro')}
+                        />
+                      </label>
+
+                      <label>
+                        <span>Desde</span>
+                        <input
+                          type="datetime-local"
+                          value={edit.desde}
+                          onChange={cambiar(setEdit, 'desde')}
+                        />
+                      </label>
+
+                      <label>
+                        <span>Hasta</span>
+                        <input
+                          type="datetime-local"
+                          value={edit.hasta}
+                          onChange={cambiar(setEdit, 'hasta')}
+                        />
+                      </label>
+
+                      <label className="campo-check">
+                        <span>Activa</span>
+                        <input
+                          type="checkbox"
+                          checked={!!edit.activa}
+                          onChange={(e) => setEdit({ ...edit, activa: e.target.checked })}
+                        />
+                      </label>
+
+                      <div className="acciones">
+                        <button onClick={guardar}>Guardar</button>
+                        <button onClick={cancelar}>Cancelar</button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -184,14 +199,18 @@ export default function Reglas() {
               <tr key={r.id}>
                 <td data-label="Nombre">{r.nombre}</td>
                 <td data-label="Puntos / litro">{r.puntos_por_litro}</td>
-                <td data-label="Prioridad">{r.prioridad}</td>
                 <td data-label="Desde">{r.desde ? fmtFecha(r.desde) : '-'}</td>
                 <td data-label="Hasta">{r.hasta ? fmtFecha(r.hasta) : '-'}</td>
                 <td data-label="Estado">{r.activa ? 'Activa' : 'Inactiva'}</td>
                 <td className="celda-acciones" data-label="Acciones">
                   <div className="reglas-acciones">
                     <button onClick={() => editar(r)}>Editar</button>
-                    <button onClick={() => alternar(r)}>{r.activa ? 'Desactivar' : 'Activar'}</button>
+                    <button
+                      onClick={() => alternar(r)}
+                      className={r.activa ? 'activada' : ''}
+                    >
+                      {r.activa ? 'Activada' : 'Activar'}
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -199,8 +218,8 @@ export default function Reglas() {
           })}
           {reglas.length === 0 && (
             <tr>
-              <td colSpan="7" className="muted reglas-vacia">
-                Aun no hay reglas
+              <td colSpan="6" className="muted reglas-vacia">
+                Aún no hay reglas
               </td>
             </tr>
           )}
@@ -222,12 +241,6 @@ export default function Reglas() {
           placeholder="Puntos / litro"
           value={form.puntos_por_litro}
           onChange={cambiar(setForm, 'puntos_por_litro')}
-        />
-        <input
-          type="number"
-          placeholder="Prioridad"
-          value={form.prioridad}
-          onChange={cambiar(setForm, 'prioridad')}
         />
         <input type="datetime-local" value={form.desde} onChange={cambiar(setForm, 'desde')} />
         <input type="datetime-local" value={form.hasta} onChange={cambiar(setForm, 'hasta')} />

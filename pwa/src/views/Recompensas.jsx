@@ -4,7 +4,6 @@ import RecompensaCard from '../components/RecompensaCard.jsx'
 
 export default function Recompensas({ onSesion }) {
   const [recompensas, setRecompensas] = useState([])
-  const [tasa, setTasa] = useState(0)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
@@ -13,15 +12,12 @@ export default function Recompensas({ onSesion }) {
       .then(setRecompensas)
       .catch((e) => setError(e.message))
       .finally(() => setCargando(false))
-    api('/config')
-      .then((c) => setTasa(c.puntos_por_litro))
-      .catch(() => {})
   }, [])
 
   return (
     <div>
       <h2>Recompensas</h2>
-      <p className="muted">Inicia sesion para canjear premios con tus puntos.</p>
+      <p className="muted">Inicia sesión para canjear premios con tus puntos.</p>
       {error && <p className="error">{error}</p>}
 
       {cargando ? (
@@ -38,17 +34,17 @@ export default function Recompensas({ onSesion }) {
           ))}
         </div>
       ) : recompensas.length === 0 ? (
-        <p className="vacio">Aun no hay recompensas disponibles</p>
+        <p className="vacio">Aún no hay recompensas disponibles</p>
       ) : (
         <div className="premios">
           {recompensas.map((r) => (
-            <RecompensaCard key={r.id} recompensa={r} tasa={tasa} mostrarProgreso={false} />
+            <RecompensaCard key={r.id} recompensa={r} mostrarProgreso={false} />
           ))}
         </div>
       )}
 
       <button type="button" className="primario" onClick={onSesion}>
-        Iniciar sesion para canjear
+        Iniciar sesión para canjear
       </button>
     </div>
   )

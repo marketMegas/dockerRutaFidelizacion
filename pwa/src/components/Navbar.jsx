@@ -25,7 +25,7 @@ export default function Navbar({ vista, onNavegar, logueado, puntos, onSesion })
             className={`sesion ${logueado ? 'salir' : 'primario'}`}
             onClick={onSesion}
           >
-            {logueado ? 'Salir' : 'Iniciar sesion'}
+            {logueado ? 'Salir' : 'Iniciar sesión'}
           </button>
         </div>
       </div>

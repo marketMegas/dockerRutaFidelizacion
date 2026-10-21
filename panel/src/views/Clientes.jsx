@@ -81,7 +81,7 @@ export default function Clientes() {
       <h2>Clientes</h2>
       <div className="fila">
         <input
-          placeholder="Buscar por placa, cedula, telefono o nombre"
+          placeholder="Buscar por placa, cédula, teléfono o nombre"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && cargar()}
@@ -94,8 +94,8 @@ export default function Clientes() {
         <thead>
           <tr>
             <th>Placas</th>
-            <th>Cedula</th>
-            <th>Telefono</th>
+            <th>Cédula</th>
+            <th>Teléfono</th>
             <th>Nombre</th>
             <th>Puntos</th>
             <th></th>
@@ -105,8 +105,8 @@ export default function Clientes() {
           {data.clientes.map((c) => (
             <tr key={c.id}>
               <td data-label="Placas">{(c.placas || []).join(', ') || c.placa || '-'}</td>
-              <td data-label="Cedula">{c.cedula || '-'}</td>
-              <td data-label="Telefono">{c.telefono}</td>
+              <td data-label="Cédula">{c.cedula || '-'}</td>
+              <td data-label="Teléfono">{c.telefono}</td>
               <td data-label="Nombre">{c.nombre || '-'}</td>
               <td data-label="Puntos">{c.puntos}</td>
               <td className="celda-acciones">
@@ -128,7 +128,7 @@ export default function Clientes() {
             <button onClick={() => setDetalle(null)}>Cerrar</button>
           </div>
 
-          <h4>Cedula</h4>
+          <h4>Cédula</h4>
           <form className="fila" onSubmit={guardarCedula}>
             <input
               inputMode="numeric"
@@ -136,7 +136,7 @@ export default function Clientes() {
               value={nuevaCedula}
               onChange={(e) => setNuevaCedula(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
             />
-            <button type="submit">{detalle.cliente.cedula ? 'Actualizar cedula' : 'Agregar cedula'}</button>
+            <button type="submit">{detalle.cliente.cedula ? 'Actualizar cédula' : 'Agregar cédula'}</button>
           </form>
 
           <h4>Placas</h4>

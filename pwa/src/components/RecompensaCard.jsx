@@ -3,7 +3,6 @@ import { useState } from 'react'
 export default function RecompensaCard({
   recompensa,
   puntos = 0,
-  tasa = 0,
   onCanjear,
   mostrarProgreso = true,
   sobreVerde = false,
@@ -16,7 +15,6 @@ export default function RecompensaCard({
   const avance = Math.min(puntos, costo_puntos)
   const pct = costo_puntos > 0 ? Math.round((avance / costo_puntos) * 100) : 0
   const faltan = Math.max(0, costo_puntos - puntos)
-  const litros = tasa > 0 ? Math.round(costo_puntos / tasa) : null
   const mostrarImagen = Boolean(imagen) && urlFallida !== imagen
 
   const clases = ['premio-card']
@@ -55,7 +53,7 @@ export default function RecompensaCard({
 
         {descripcion && <p className="premio-desc">{descripcion}</p>}
 
-        {mostrarProgreso ? (
+        {mostrarProgreso && (
           <>
             <div
               className="medidor"
@@ -80,16 +78,6 @@ export default function RecompensaCard({
               )}
             </div>
           </>
-        ) : (
-          <p className="premio-litros">
-            {litros !== null ? (
-              <>
-                Equivale a <strong>{litros} L</strong> de glp
-              </>
-            ) : (
-              <>Por {costo_puntos} puntos</>
-            )}
-          </p>
         )}
       </div>
     </article>
