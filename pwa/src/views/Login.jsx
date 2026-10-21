@@ -124,7 +124,7 @@ export default function Login({ onLogin }) {
 
         <img
           className="login-hero-banner"
-          src="https://images.pexels.com/photos/13320713/pexels-photo-13320713.jpeg"
+          src="https://images.pexels.com/photos/40431732/pexels-photo-40431732.jpeg"
           alt=""
           decoding="async"
           referrerPolicy="no-referrer"
@@ -225,7 +225,7 @@ export default function Login({ onLogin }) {
           <h2>Recompensas</h2>
           <div className="premios">
             {recompensas.map((r) => (
-              <RecompensaCard key={r.id} recompensa={r} mostrarProgreso={false} sobreVerde />
+              <RecompensaCard key={r.id} recompensa={r} mostrarProgreso={false} sobreMenta />
             ))}
           </div>
         </section>

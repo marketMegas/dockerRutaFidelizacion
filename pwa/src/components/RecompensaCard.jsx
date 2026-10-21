@@ -5,7 +5,7 @@ export default function RecompensaCard({
   puntos = 0,
   onCanjear,
   mostrarProgreso = true,
-  sobreVerde = false,
+  sobreMenta = false,
 }) {
   const { nombre, descripcion, imagen, costo_puntos, stock } = recompensa
   const [urlFallida, setUrlFallida] = useState(null)
@@ -18,7 +18,7 @@ export default function RecompensaCard({
   const mostrarImagen = Boolean(imagen) && urlFallida !== imagen
 
   const clases = ['premio-card']
-  if (sobreVerde) clases.push('premio-card--verde')
+  if (sobreMenta) clases.push('premio-card--menta')
   if (agotado) clases.push('premio-card--agotado')
 
   let estado = null

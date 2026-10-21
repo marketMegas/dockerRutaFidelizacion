@@ -32,18 +32,18 @@ costo), a proposito igual a la `.barra` de Reportes del panel: nada de segmentos
 interior desde 2026-10-20, por orden del dueno. Completan la firma:
 
 1. `.medidor` — pista 8px, radio 4px, fondo `--surface-track`, `overflow: hidden`.
-2. `.nivel` — relleno degradado `linear-gradient(90deg, --verde, --naranja)`, ancho = avance,
+2. `.nivel` — relleno degradado `linear-gradient(90deg, --menta, --lima)`, ancho = avance,
    transicion de 0.4s (anulada en `prefers-reduced-motion: reduce`).
-3. `.premio-estado` — "Te faltan N pts" / "Listo para canjear" (este ultimo en pastilla verde).
+3. `.premio-estado` — "Te faltan N pts" / "Listo para canjear" (este ultimo en pastilla menta).
 4. `.premio-costo` — numeral en Barlow Condensed tabular, como lectura de odometro, con la
-   unidad en la pildora verde `.premio-costo-u` (`--verde-hondo` con `--verde-claro`).
+   unidad en la pildora azul `.premio-costo-u` (`--azul-hondo` con `--menta-claro`).
 5. `.premio-litros` — **eliminado (2026-10-21)**: la equivalencia "Equivale a N L de glp"
    ya no se muestra en ninguna tarjeta. El costo en puntos se lee solo en `.premio-costo`.
    No reintroducirlo: el pie de la tarjeta es para el estado y el canje.
 6. `.premio-media` — miniatura de referencia a la izquierda de cada tarjeta (imagen
    `recompensa.imagen`); si no hay imagen, un bloque de rayas diagonales en
    `--surface-track`. Nunca dejar el hueco vacio.
-7. `.placa-chip` — la placa del cliente escrita sobre amarillo placa, en la cabecera.
+7. `.placa-chip` — la placa del cliente escrita sobre menta placa, en la cabecera.
 8. En el catalogo de recompensas (`main.vista--recompensas`) la **imagen es el fondo**
    de la tarjeta: todo el texto se invierte a blanco y el pie (estado + medidor) se
    apoya sobre un velo oscuro, no sobre papel. Ver "Color".
@@ -74,10 +74,10 @@ completo** de la tarjeta, con un velo degradado encima.
 - `.premio-cuerpo` — columna flexible con el texto: nombre a 2 lineas
   (`-webkit-line-clamp: 2`), descripcion a 1 linea, medidor de 8px anclado abajo con
   `margin-top: auto`, pie con estado + boton.
-- `.premio-card--verde` — las tarjetas de muestra del inicio, sobre body blanco: panel
-  `--verde-claro` con hairline `#b6e3c2` y `--sombra-card`, tinta normal. El nombre
-  "verde" es historico (vino de cuando iban sobre superficie oscura); hoy es literal: es
-  el unico verde de superficie que queda en la PWA.
+- `.premio-card--menta` — las tarjetas de muestra del inicio, sobre body blanco: panel
+  `--menta-claro` con hairline `#b9f0dc` y `--sombra-card`, tinta normal. El nombre
+  "menta" es historico (vino de cuando el panel era verde); hoy es literal: es
+  el unico color de superficie claro que queda en la PWA.
 - `.vista.vista--recompensas .premio-card` — tarjeta tipo credito con la foto de fondo:
   `position: relative`, `aspect-ratio: 1.586/1`, `padding: 0`, `border-radius: 18px`,
   sin borde. `.premio-media` va en `inset: 0` (absoluta, 100% x 100%) y su `::after` pone
@@ -106,59 +106,66 @@ peso (tarjeta de socio, formulario). Pastillas y estados: 999px.
 
 ## Color
 
-Los valores de `--verde`, `--placa`, `--naranja` y sus variantes hondas estan
-**bloqueados por el dueno del producto**. Lo que cambio fue a que superficie va cada uno.
+**Paleta nueva (2026-10-21)**: la PWA adopto la paleta entregada por el dueno en
+`pwa/public/paleta.txt` — `#082770` azul noche, `#073edb` azul electrico, `#3af3b0` menta y
+`#5bf300` lima. Los tokens se renombraron para que el nombre no mienta: `--verde` paso a
+`--menta`, `--naranja` a `--lima`, `--verde-hondo`/`--naranja-hondo` a `--azul-hondo`,
+`--verde-claro` a `--menta-claro` y `--naranja-claro` a `--azul-claro`. El panel de
+administracion conserva su propia paleta (ver "Tokens").
 
-- Naranja marca `--marca #ff9842` — **superficies de marca**: barra de navegacion, cabecera,
-  tarjeta de socio, pestana activa del menu inferior. Reemplazo del verde oscuro por
-  decision del dueno. El inicio/login **ya no es superficie de marca**: su cuerpo es blanco
-  y la marca queda solo en la barra de arriba.
-- Fondo del body **blanco** (`--fondo #ffffff`, pedido por el dueno junto con la barra
-  naranja). Con el fondo blanco el hairline `--linea` dejo de alcanzar para separar: las
-  filas `.lista li` llevan ahora `--sombra-card` y la `.badge` neutra usa
-  `--surface-track` en vez de `--fondo`. No quitar esas dos piezas "porque el borde ya
-  basta": sobre blanco vuelven a fundirse.
-- Sobre `--marca` la tinta es oscura (`--tinta-sobre-marca #2b1204`), **nunca blanca ni
-  amarilla**: blanco 2.60:1 y amarillo placa 1.79:1 sobre #ff9842, ambos fuera de WCAG;
-  el dark ink rinde 6.78:1 en el centro del degradado.
-- Verde marca `--verde #5fbd44` y `--verde-2` — acento: foco, franja tricolor de los tabs.
-- Verde hondo `--verde-hondo #1b4d24` — **solo texto sobre superficie clara**: `.pos`,
-  `.premio-estado.listo`, badges `entregado`/`canjeado`, `.ok`, hover de tabs. No vuelve a
-  aparecer como fondo.
+- Azul marca `--marca #073edb` — **superficies de marca**: barra de navegacion, cabecera,
+  tarjeta de socio, pestana activa del menu inferior, paso numerado. Con tinta
+  **blanca** encima (`--tinta-sobre-marca #ffffff`, 7.72:1): sobre azul ya no se usa tinta
+  oscura.
+- Azul noche `--azul-hondo #082770` — **texto sobre superficie clara** y fondo de las
+  pastillas de puntos (`.premio-costo-u`, `.sidebar-puntos`). Sobre papel 13.69:1.
+- Menta `--menta #3af3b0` — acento: franja de la barra (`.navbar::after`), franja
+  tricolor de los tabs, chip de placa, foco (`--anillo-focus`) y textos de estado.
+- Lima `--lima #5bf300` — **solo accion**: boton "Canjear", boton del login y tramo final
+  del degradado del medidor (`--menta` → `--lima`). Con tinta `--placa-tinta` da 9.30:1.
+- Sobre `--marca` la tinta es **blanca**: 7.72:1 sobre #073edb y 13.69:1 sobre #082770.
+  Nunca `--azul-hondo` sobre azul.
+- Fondo del body **blanco** (`--fondo #ffffff`). Con el fondo blanco el hairline `--linea`
+  dejo de alcanzar para separar: las filas `.lista li` llevan `--sombra-card` y la
+  `.badge` neutra usa `--surface-track` en vez de `--fondo`. No quitar esas dos piezas
+  "porque el borde ya basta": sobre blanco vuelven a fundirse.
 - **Sobre foto** (`main.vista--recompensas`) el texto de la tarjeta va **en blanco**
   (`#fff`) con el halo `--halo` (`0 1px 2px rgba(0,0,0,.7), 0 0 18px rgba(0,0,0,.5)`):
-  nombre, costo, descripcion, litros y estado ("Te faltan N pts"). Las pastillas
+  nombre, costo, descripcion y estado ("Te faltan N pts"). Las pastillas
   `.premio-costo-u` y `.premio-estado.listo` usan el velo translucido `rgba(8,20,11,.8)` con
-  borde interior `rgba(255,255,255,.3)` y texto blanco: el verde hondo tampoco se usa de
-  fondo ahi. El boton "Canjear" conserva la tinta oscura (`--placa-tinta` 6.98:1 sobre
-  `--naranja`).
+  borde interior `rgba(255,255,255,.3)` y texto blanco. El boton "Canjear" conserva la
+  tinta oscura (`--placa-tinta` 9.30:1 sobre `--lima`).
 - Contraste **sobre foto** (medido sobre las cuatro fotos del catalogo, blanco contra el
   velo): el peor caso del header pasa de 2.54:1 a **6.27:1** y el del pie de 3.68:1 a
-  **14.24:1**. En la tarjeta renderizada la mediana del header da **12.17:1** y la del pie
-  **15.56:1**. Si se toca el velo o el halo, volver a medir: el blanco sobre foto clara
-  cae por debajo de 4.5:1 en cuanto se aligera el degrade.
-- Amarillo placa `--placa #f6d51e` sobre `--placa-tinta` — **solo la placa del vehiculo y
-  los acentos de marca**: `.placa-chip`, la cornisa del formulario, las franjas de
-  `.navbar::after` y `.tabs::before`, el chip dorado de la tarjeta de socio y la placa de
-  OTP. Los puntos ya no van en amarillo: `.saldo-mini` y `.premio-costo-u` son pastillas
-  `--verde-hondo` con numero `--verde-claro` (8.53:1), pedido por el dueno.
-- Naranja `--naranja #ff9842` (llama) — reservado a accion (botones) y al tramo final del
-  degradado del medidor (`--verde` → `--naranja`), igual que en Reportes.
-- Texto `--tinta #14251a`; secundario `--muted #4d6453`.
+  **14.24:1**. Con la paleta nueva el degradado de la tarjeta es azul noche
+  (`linear-gradient(145deg, #082770, #0a3378)`) en vez de verde: en la tarjeta renderizada
+  la mediana del header da **15.62:1** y la del pie **17.49:1**. Si se toca el velo o el
+  halo, volver a medir: el blanco sobre foto clara cae por debajo de 4.5:1 en cuanto se
+  aligera el degrade.
+- Pastilla de placa `--placa #3af3b0` sobre `--placa-tinta #082770` (9.53:1) — **solo la
+  placa del vehiculo y los acentos de marca**: `.placa-chip`, la cornisa del formulario, el
+  input de placa y la placa de OTP. Los puntos ya no van en amarillo: `.saldo-mini` y
+  `.premio-costo-u` son pastillas `--azul-hondo` con numero `--menta-claro` (12.44:1).
+- Texto `--tinta #082770`; secundario `--muted #52658a` (5.85:1 sobre papel, 5.32:1 sobre
+  `--menta-claro`).
 - El color significa; no se usa para decorar.
 
-Contraste medido, para no re-decirlo: tinta sobre placa 11.94, tinta sobre boton naranja
-6.98, `--muted` sobre papel 6.44, `--verde-hondo` sobre `--verde-claro` 8.53,
-`--naranja-hondo` sobre papel 4.30, `--peligro` sobre `--peligro-fondo` 4.76, tinta de
-marca sobre la barra naranja 6.78 y sobre el chip translucente `rgba(43,18,4,.14)` del
-boton "Salir" 5.34. El login perdio el degradado cuando el inicio paso a body blanco, asi
-que el viejo 4.25:1 del hero en la esquina oscura del radial ya no aplica: el hero usa
-`--tinta` y `--muted` sobre blanco.
+Contraste medido (2026-10-21, Chrome headless sobre la PWA desplegada): blanco sobre
+`--marca` 7.72:1, `--tinta` sobre papel 13.69:1, `--azul-hondo` sobre `--menta-claro`
+12.44:1, `--muted` sobre papel 5.85:1, `--placa-tinta` sobre `--placa` 9.53:1, tinta sobre
+boton lima 9.30:1, `--peligro` sobre `--peligro-fondo` 4.76:1. El hero del login usa
+`--tinta` y `--muted` sobre blanco; el degradado viejo del hero ya no aplica.
+
+**Alcance de la paleta**: solo la PWA. `panel/src/styles.css` sigue con `--green #5fbd44` y
+`--orange #ff9842`; si se unifican, hacerlo a proposito y en un solo cambio. El
+`theme-color` de `pwa/index.html` y el `theme_color`/`background_color` de
+`pwa/public/manifest.webmanifest` van en `#073edb` (antes `#ff9842`): si cambia `--marca`,
+cambiarlos tambien.
 
 ## Componentes clave
 
 - `pwa/src/App.jsx` — pie de pagina `<footer className="pie-app">` con la marca
-  "Fidelización PUNTOS G-MAX" (`.pie-app-marca`, Barlow Condensed 700, `--verde-hondo`
+  "Fidelización PUNTOS G-MAX" (`.pie-app-marca`, Barlow Condensed 700, `--azul-hondo`
   porque es texto sobre blanco) y debajo el enlace `.pie-app-link` "Políticas de
   privacidad". Va al final de `.app`, antes de `.tabs`; en las vistas con barra inferior
   fija el `.app.con-tabs` reserva 96px de aire y el pie no queda tapado (verificado a
@@ -173,9 +180,9 @@ que el viejo 4.25:1 del hero en la esquina oscura del radial ya no aplica: el he
   serviceworker; el icon de la app instalada sigue siendo `icon.png`),
   acciones (`.saldo-mini` y boton `.sesion`) y `.navbar-tabs` con Inicio / Funcionamiento /
   Recompensas / Ayuda. Es `position: sticky` sobre `--marca`, cierra con la franja
-  `--placa` en `.navbar::after`, la pestana activa es una pastilla blanca
-  (`--papel` + `--tinta`) y el foco de los controles sobre naranja va en
-  `--tinta-sobre-marca`, no en `--verde`.
+  `--menta` en `.navbar::after`, la pestana activa es una pastilla blanca
+  (`--papel` + `--tinta`) y el foco de los controles sobre azul va en
+  `--tinta-sobre-marca`, no en `--menta`.
 - `pwa/src/views/Login.jsx` — el formulario de placa es el **sidebar del login** en
   escritorio (>=900px): columna de 300px pegada a la izquierda, `position: sticky`, con
   el hero y el catalogo de recompensas a su derecha. En movil sigue siendo una tarjeta
@@ -194,19 +201,20 @@ que el viejo 4.25:1 del hero en la esquina oscura del radial ya no aplica: el he
   `pwa/nginx.conf` ya permite `img-src https:`. No poner la foto en la barra superior
   (`.navbar`): ahi vive la marca de texto.
 - `pwa/src/components/RecompensaCard.jsx` — tarjeta de recompensa. Props: `recompensa`,
-  `puntos`, `tasa` (puntos por litro), `onCanjear`, `mostrarProgreso`, `sobreVerde`.
+  `puntos`, `onCanjear`, `mostrarProgreso`, `sobreMenta`.
   Lee `recompensa.imagen`; si la URL falla (`onError`) vuelve al bloque de rayas.
   Se usa en `views/Canjes.jsx` (con progreso y boton) y en `views/Login.jsx`
-  (sin progreso, con `sobreVerde=true` — la prop se llama asi por historia, hoy pinta el
-  panel tenue `.premio-card--verde` sobre el body blanco del inicio).
-- `.saldo` — tarjeta de socio: `--grad-socio` (naranja), numero en `--tinta-sobre-marca`
-  con relieve claro y chip dorado en `.saldo::after` (40x29, arriba a la izquierda).
+  (sin progreso, con `sobreMenta=true` — la prop se llama asi por historia, hoy pinta el
+  panel tenue `.premio-card--menta` sobre el body blanco del inicio).
+- `.saldo` — tarjeta de socio: `--grad-socio` (azul `#073edb` → `#082770`), numero en
+  `--tinta-sobre-marca` con relieve claro y chip menta en `.saldo::after` (40x29, arriba a
+  la izquierda).
   Sin textura de rejilla: la rejilla de `.saldo::before` se elimino por pedido del dueno
   (2026-10-21), el numero se lee sobre el degradado limpio.
-- `.cabecera` — sticky, `--grad-socio` con `border-bottom: 3px solid --placa`; `.saldo-mini`
-  es una pildora amarilla (`--placa` + `--placa-tinta`, sombras interiores), no numero suelto.
-- `.tabs` — fija abajo, regla tricolor verde-amarillo-naranja en `.tabs::before`; pestana
-  activa en pastilla `--marca` con tinta oscura.
+- `.cabecera` — sticky, `--grad-socio` con `border-bottom: 3px solid --menta`; `.saldo-mini`
+  es una pildora menta (`--placa` + `--placa-tinta`, sombras interiores), no numero suelto.
+- `.tabs` — fija abajo, regla tricolor lima-menta-azul en `.tabs::before`; pestana
+  activa en pastilla `--marca` con tinta blanca.
 - `.lista li:has(.pos)` / `:has(.neg)` — acento lateral de 3px segun el signo del
   movimiento; `.delta` en pastilla tintada. Donde `:has()` no existe, el acento
   simplemente no aparece y la fila sigue siendo legible.
@@ -254,12 +262,12 @@ que el viejo 4.25:1 del hero en la esquina oscura del radial ya no aplica: el he
 ```
 --fondo --papel --tinta --muted --linea        superficies y tinta (--fondo es blanco puro)
 --marca                                        superficie de marca (barra, cabecera, socio, pestana activa)
---tinta-sobre-marca                            texto sobre --marca (oscura, nunca blanca)
---verde --verde-2 --verde-hondo                acento y texto de estado sobre claro
+--tinta-sobre-marca                            texto sobre --marca (blanca)
+--azul-hondo                                   texto/fondo sobre superficie clara (--tinta)
+--menta --lima                                 acento y accion
 --placa --placa-tinta                          el numero que importa
---naranja --naranja-hondo                      accion y nivel
 --peligro --peligro-fondo --peligro-linea      errores
---verde-claro --naranja-claro                  fondos de pastilla y badge
+--menta-claro --azul-claro                     fondos de pastilla y badge
 --surface-track                                pista del medidor, esqueletos, controles deshabilitados
 --space-1..5                                   escala de espaciado (base 0.25rem)
 --radius-ctrl --radius-card --radius-panel     radios
@@ -267,6 +275,12 @@ que el viejo 4.25:1 del hero en la esquina oscura del radial ya no aplica: el he
 --anillo-focus                                 halo de foco en campos
 --display                                      Barlow Condensed
 ```
+
+Valores vigentes: `--marca #073edb`, `--tinta-sobre-marca #ffffff`, `--azul-hondo #082770`,
+`--tinta #082770`, `--muted #52658a`, `--linea #d8e0f2`, `--menta #3af3b0`,
+`--lima #5bf300`, `--placa #3af3b0`, `--placa-tinta #082770`, `--menta-claro #e3f9f1`,
+`--azul-claro #e9eefc`, `--surface-track #e9edf8`, `--grad-socio` azul, `--anillo-focus
+rgba(91,243,0,.35)`.
 
 El panel de administracion (`panel/src/styles.css`) conserva su propia paleta y tipos:
 `--green #5fbd44`, `--orange #ff9842`, IBM Plex Sans para el cuerpo y Space Grotesk para
@@ -288,7 +302,7 @@ Para revisar solo estilos sin tocar el stack: `npx vite build` en `pwa/` y
 queda sirviendo el bundle del host; `docker compose build pwa` lo revierte. `docker cp`
 acumula hashes viejos en `assets/`: confirmar en el navegador que `index.html` apunta al
 CSS nuevo, y si el `fetch` del documento sigue devolviendo el degradado anterior, el
-serviceworker `fid-glp-v9` esta sirviendo cache — desregistrarlo y vaciar `caches` antes
+serviceworker `fid-glp-v26` esta sirviendo cache — desregistrarlo y vaciar `caches` antes
 de recargar con `ignoreCache`. La sesion de prueba se monta contra
 `http://127.0.0.1:8002/fid-api` con `POST /auth/otp/request` (leer `debug_codigo`) y
 `POST /auth/otp/verify`, guardando el token en `localStorage.fid_cliente_token`.
