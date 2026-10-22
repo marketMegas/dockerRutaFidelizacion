@@ -40,18 +40,12 @@ def test_normalizar_codigo():
     assert catalogo.normalizar_codigo("abcd-2345") == "ABCD-2345"
     assert catalogo.normalizar_codigo("ABCD2345") == "ABCD-2345"
     assert catalogo.normalizar_codigo(" abcd2345 ") == "ABCD-2345"
-    assert catalogo.normalizar_codigo("AB0D-2345") is None  # el 0 no esta en el alfabeto
-    assert catalogo.normalizar_codigo("AB1D-2345") is None  # el 1 tampoco
+    assert catalogo.normalizar_codigo("AB0D-2345") == "AB0D-2345"
+    assert catalogo.normalizar_codigo("AB1D-2345") == "AB1D-2345"
+    assert catalogo.normalizar_codigo("OIL0-1L2O") == "OIL0-1L2O"
     assert catalogo.normalizar_codigo("ABC") is None
+    assert catalogo.normalizar_codigo("AB-D2345") is None
     assert catalogo.normalizar_codigo(None) is None
-
-
-def test_generar_codigos_no_repite():
-    codigos = catalogo.generar_codigos(200)
-    assert len(codigos) == 200
-    assert len(set(codigos)) == 200
-    for codigo in codigos:
-        assert catalogo.normalizar_codigo(codigo) == codigo
 
 
 def test_guardar_incrementa_la_version():
@@ -68,7 +62,7 @@ def test_guardar_con_version_desactualizada_da_conflicto():
 
 def test_codigo_invalido_es_rechazado():
     datos = _catalogo_valido()
-    datos["premios"][0]["codigos"] = ["no-valido"]
+    datos["premios"][0]["codigos"] = ["corto"]
     with pytest.raises(catalogo.CatalogoInvalido):
         catalogo.validar(datos)
 
@@ -134,39 +128,9 @@ def test_el_catalogo_publico_no_expone_los_codigos(client):
     assert premio["codigos_disponibles"] == 100
 
 
-def test_admin_genera_codigos(client, admin_headers):
-    antes = client.get(f"{PREFIX}/admin/catalogo", headers=admin_headers).json()
-    premio = antes["premios"][0]
-    assert len(premio["codigos"]) == 100
-
-    resp = client.post(
-        f"{PREFIX}/admin/catalogo/{premio['clave']}/codigos",
-        json={"cantidad": 5},
-        headers=admin_headers,
-    )
-    assert resp.status_code == 201, resp.text
-    assert len(resp.json()["codigos"]) == 5
-    assert resp.json()["version"] == antes["version"] + 1
-
-    despues = client.get(f"{PREFIX}/admin/catalogo", headers=admin_headers).json()
-    codigos = despues["premios"][0]["codigos"]
-    assert len(codigos) == 105
-    assert len(set(codigos)) == 105
-    assert set(resp.json()["codigos"]).issubset(set(codigos))
-
-
-def test_admin_no_puede_pasar_el_maximo_de_codigos(client, admin_headers):
+def test_el_endpoint_de_generar_codigos_no_existe(client, admin_headers):
     resp = client.post(
         f"{PREFIX}/admin/catalogo/cafe/codigos",
-        json={"cantidad": 5000},
-        headers=admin_headers,
-    )
-    assert resp.status_code == 400
-
-
-def test_admin_genera_codigos_de_un_premio_inexistente(client, admin_headers):
-    resp = client.post(
-        f"{PREFIX}/admin/catalogo/no-existe/codigos",
         json={"cantidad": 1},
         headers=admin_headers,
     )

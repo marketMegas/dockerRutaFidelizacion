@@ -3,7 +3,6 @@ import {
   cargarCatalogo,
   claveDesdeNombre,
   codigosDesdeTexto,
-  generarCodigos,
   guardarCatalogo,
   normalizarCodigo,
   textoDesdeCodigos,
@@ -18,7 +17,6 @@ export default function Catalogo() {
   const [edit, setEdit] = useState(null)
   const [codigosDe, setCodigosDe] = useState(null)
   const [codigosTexto, setCodigosTexto] = useState('')
-  const [generarCantidad, setGenerarCantidad] = useState(100)
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -128,11 +126,6 @@ export default function Catalogo() {
     setCodigosTexto(textoDesdeCodigos(p.codigos))
   }
 
-  const premioCodigos = datos?.premios.find((p) => p.clave === codigosDe) || null
-  const sinGuardar = premioCodigos
-    ? codigosTexto !== textoDesdeCodigos(premioCodigos.codigos)
-    : false
-
   async function guardarCodigos() {
     setError('')
     setMensaje('')
@@ -144,7 +137,7 @@ export default function Catalogo() {
       else invalidos.push(linea)
     }
     if (invalidos.length > 0) {
-      setError(`Códigos inválidos (8 caracteres, sin 0 ni 1): ${invalidos.slice(0, 6).join(', ')}`)
+      setError(`Códigos inválidos (8 caracteres alfanuméricos): ${invalidos.slice(0, 6).join(', ')}`)
       return
     }
     if (new Set(normalizados).size !== normalizados.length) {
@@ -162,24 +155,6 @@ export default function Catalogo() {
     )
     if (await guardar({ ...datos, premios }, `Códigos guardados (${normalizados.length}).`)) {
       setCodigosTexto(textoDesdeCodigos(normalizados))
-    }
-  }
-
-  async function generar() {
-    setError('')
-    setMensaje('')
-    setGuardando(true)
-    try {
-      const res = await generarCodigos(codigosDe, generarCantidad)
-      const frescos = await cargarCatalogo()
-      setDatos(frescos)
-      const premio = frescos.premios.find((p) => p.clave === codigosDe)
-      setCodigosTexto(textoDesdeCodigos(premio.codigos))
-      setMensaje(`Se generaron ${res.codigos.length} códigos.`)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setGuardando(false)
     }
   }
 
@@ -300,25 +275,6 @@ export default function Catalogo() {
                           spellCheck={false}
                           aria-label={`Códigos de ${p.nombre}`}
                         />
-                        <div className="fila-codigos">
-                          <span className="campo-generar">
-                            <label>
-                              <span>Cantidad</span>
-                              <input
-                                type="number"
-                                min="1"
-                                value={generarCantidad}
-                                onChange={(e) => setGenerarCantidad(e.target.value)}
-                              />
-                            </label>
-                            <button type="button" onClick={generar} disabled={guardando || sinGuardar}>
-                              Generar códigos
-                            </button>
-                          </span>
-                          {sinGuardar && (
-                            <span className="sin-guardar">Guarda los cambios antes de generar.</span>
-                          )}
-                        </div>
                       </div>
 
                       <div className="acciones">

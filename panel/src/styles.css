@@ -423,29 +423,6 @@ td button + button {
   resize: vertical;
 }
 
-.fila-codigos {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.8rem;
-}
-
-.campo-generar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 0.5rem;
-}
-
-.campo-generar label {
-  width: 120px;
-}
-
-.sin-guardar {
-  font-size: 0.8rem;
-  color: var(--orange, #b45309);
-}
-
 .codigo-panel {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;

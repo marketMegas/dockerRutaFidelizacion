@@ -22,7 +22,6 @@ Formato:
 import json
 import logging
 import os
-import random
 import shutil
 import tempfile
 import threading
@@ -36,7 +35,7 @@ from ..models import Canje
 
 logger = logging.getLogger(__name__)
 
-ALFABETO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+ALFABETO = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 LONGITUD_CODIGO = 8
 MAX_CODIGOS_POR_PREMIOS = 5000
 
@@ -78,22 +77,6 @@ def normalizar_codigo(valor: Any) -> str | None:
     if any(ch not in ALFABETO for ch in limpio):
         return None
     return f"{limpio[:4]}-{limpio[4:]}"
-
-
-def generar_codigos(cantidad: int, existentes: set[str] | None = None) -> list[str]:
-    """Genera codigos unicos en el alfabeto sin caracteres ambiguos."""
-    tomados = {normalizar_codigo(c) for c in (existentes or set())}
-    tomados.discard(None)
-    nuevos: list[str] = []
-    generador = random.SystemRandom()
-    while len(nuevos) < cantidad:
-        crudo = "".join(generador.choice(ALFABETO) for _ in range(LONGITUD_CODIGO))
-        codigo = f"{crudo[:4]}-{crudo[4:]}"
-        if codigo in tomados:
-            continue
-        tomados.add(codigo)
-        nuevos.append(codigo)
-    return nuevos
 
 
 def _catalogo_por_defecto() -> dict:
@@ -183,7 +166,7 @@ def _validar_premios(premios: Any) -> list[dict]:
             if codigo is None:
                 raise CatalogoInvalido(
                     f"El premio '{clave}' tiene un codigo invalido: '{codigo_raw}'. "
-                    "Deben ser 8 caracteres sin ambiguedad, con guion al medio."
+                    "Deben ser 8 caracteres alfanumericos, con guion al medio."
                 )
             if codigo in codigos_vistos:
                 raise CatalogoInvalido(f"El codigo '{codigo}' esta repetido en el catalogo.")

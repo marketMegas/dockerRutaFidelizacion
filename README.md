@@ -51,6 +51,12 @@ reverso que dejaria el saldo en negativo se rechaza.
   entrega al cliente; el premio se reclama en la estacion presentando ese codigo. No hay QR,
   estado de entrega ni verificacion en linea. Un reverso del movimiento de canje **repone el
   codigo** al pool.
+- **Inventario fijo, sin generacion.** Los codigos se cargan desde una lista existente y se
+  agrupan por costo en puntos (por ejemplo, los bonos de 50 a 300 pts). La API y el panel no
+  generan codigos nuevos: solo entregan los disponibles y permiten editar el pool manualmente.
+  Los codigos aceptan cualquier caracter alfanumerico (`A-Z0-9`) y se normalizan a `XXXX-XXXX`.
+  Para importar un Excel se usa `python -m scripts.importar_recompensas <archivo.xlsx>` dentro
+  del contenedor `api`; la lista se guarda fuera de `panel/public` por contener datos personales.
 - **La cedula es opcional para canjear.** El canje se identifica con la sesion del cliente.
   El panel conserva una bitacora de solo lectura de codigos entregados, con busqueda por
   cedula.
@@ -149,9 +155,8 @@ Prefijo `API_PREFIX=/fid-api`.
   solo se pisan los campos enviados; valida nombre duplicado con 409 y `desde > hasta` con 400).
 - `GET/PUT /fid-api/admin/catalogo` — leer y guardar niveles + premios + pool de codigos con
   `version` (409 si otro administrador guardo antes). El campo `imagen` es la **URL** (max. 500) de
-  la foto de referencia de la tarjeta; el backend no almacena archivos.
-- `POST /fid-api/admin/catalogo/{clave}/codigos` `{cantidad}` — genera codigos nuevos para un premio
-  (maximo 5000 por llamada) y los agrega al pool.
+  la foto de referencia de la tarjeta; el backend no almacena archivos. El pool solo se edita
+  cargando o quitando codigos existentes; no hay generacion automatica.
 
 Documentacion interactiva: `/docs`.
 
@@ -268,6 +273,6 @@ cd api && ruff check . && pytest
 
 La suite cubre el motor de reglas, el ledger (acumulacion, canje con codigo, reverso que repone
 el codigo, saldo insuficiente), los niveles por consumo mensual y su corte de mes, el catalogo
-en archivo (version, conflictos, validacion), la generacion de codigos, las cuentas
+en archivo (version, conflictos, validacion), la importacion de codigos existentes, las cuentas
 multivehiculo y los endpoints principales a traves de HTTP.
 # dockerRutaFidelizacion

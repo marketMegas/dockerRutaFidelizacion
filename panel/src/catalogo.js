@@ -1,6 +1,6 @@
 import { api } from './api.js'
 
-export const ALFABETO_CODIGOS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+export const ALFABETO_CODIGOS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 export function cargarCatalogo() {
   return api('/admin/catalogo')
@@ -28,13 +28,6 @@ export function guardarCatalogo(datos) {
         codigos: p.codigos || [],
       })),
     },
-  })
-}
-
-export function generarCodigos(clave, cantidad) {
-  return api(`/admin/catalogo/${encodeURIComponent(clave)}/codigos`, {
-    method: 'POST',
-    body: { cantidad: Number(cantidad) },
   })
 }
 

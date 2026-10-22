@@ -256,10 +256,9 @@ cambiarlos tambien.
   tarjeta y la miniatura ocupa el ancho completo con 160px de alto), contadores de codigos
   disponibles/entregados, creacion y edicion inline. La columna `imagen` es una URL publica
   que se pega en el panel; el backend no almacena archivos. La edicion del pool abre una
-  fila `colspan` con `.campo-codigos`: `.contador-codigos`, `.area-codigos` (monospace, un
-  codigo por linea), `.fila-codigos`/`.campo-generar` para generar codigos y `.sin-guardar`
-  cuando hay cambios sin guardar. Guardar envia **todo** el catalogo (incluidos los codigos):
-  si se omite el pool, se vacia.
+  fila `colspan` con `.campo-codigos`: `.contador-codigos` y `.area-codigos` (monospace, un
+  codigo por linea). No hay boton de generar: el pool solo se carga o se recorta manualmente.
+  Guardar envia **todo** el catalogo (incluidos los codigos): si se omite el pool, se vacia.
 - `panel/src/views/Niveles.jsx` — tabla Nivel / Litros en el mes / Multiplicador / Descripcion
   con edicion inline (mismo patron `.celda-edicion`). Guarda niveles y premios juntos con
   `PUT /admin/catalogo` para no perder el pool de codigos.

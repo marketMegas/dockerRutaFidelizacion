@@ -1,4 +1,3 @@
-import copy
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,7 +10,6 @@ from ..models import Canje, Cliente, LedgerPuntos, Regla, Vehiculo, Venta, utcno
 from ..schemas import (
     CatalogoIn,
     ClientePatchIn,
-    GenerarCodigosIn,
     ReglaIn,
     ReglaPatchIn,
     ReversoIn,
@@ -475,33 +473,4 @@ def guardar_catalogo(body: CatalogoIn, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/catalogo/{clave}/codigos", status_code=status.HTTP_201_CREATED)
-def generar_codigos_premio(clave: str, body: GenerarCodigosIn):
-    """Agrega codigos nuevos al pool de un premio y guarda el catalogo."""
-    datos = copy.deepcopy(catalogo.leer())
-    premio = next((p for p in datos["premios"] if p["clave"] == clave.strip().lower()), None)
-    if premio is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Premio no encontrado")
 
-    margen = catalogo.MAX_CODIGOS_POR_PREMIOS - len(premio["codigos"])
-    if body.cantidad > margen:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"Solo caben {max(margen, 0)} codigos mas en este premio",
-        )
-
-    existentes = {codigo for p in datos["premios"] for codigo in p["codigos"]}
-    nuevos = catalogo.generar_codigos(body.cantidad, existentes)
-    premio["codigos"].extend(nuevos)
-    try:
-        guardado = catalogo.guardar(datos, version_esperada=datos["version"])
-    except catalogo.ConflictoCatalogo as exc:
-        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
-    except catalogo.CatalogoInvalido as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
-    return {
-        "ok": True,
-        "version": guardado["version"],
-        "premio": premio["clave"],
-        "codigos": nuevos,
-    }

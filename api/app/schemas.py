@@ -81,10 +81,6 @@ class CatalogoIn(BaseModel):
     premios: list[PremioIn] = Field(default_factory=list)
 
 
-class GenerarCodigosIn(BaseModel):
-    cantidad: int = Field(gt=0, le=5000)
-
-
 class CanjeIn(BaseModel):
     premio_clave: str = Field(min_length=1, max_length=60)
 
