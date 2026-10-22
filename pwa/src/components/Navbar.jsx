@@ -1,3 +1,5 @@
+import { fmtPuntos } from '../api.js'
+
 const SECCIONES = [
   { key: 'inicio', label: 'Inicio' },
   { key: 'funcionamiento', label: 'Funcionamiento' },
@@ -16,7 +18,7 @@ export default function Navbar({ vista, onNavegar, logueado, puntos, onSesion })
         <div className="navbar-acciones">
           {logueado && (
             <div className="saldo-mini">
-              <span className="saldo-mini-v">{puntos ?? '-'}</span>
+              <span className="saldo-mini-v">{puntos == null ? '-' : fmtPuntos(puntos)}</span>
               <span className="saldo-mini-t">puntos</span>
             </div>
           )}

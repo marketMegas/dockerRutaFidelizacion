@@ -54,6 +54,12 @@ case "$ACCION" in
     stamp="$(date +%Y%m%d-%H%M%S)"
     docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${POSTGRES_USER:-fidelizacion}" "${POSTGRES_DB:-fidelizacion}" > "backups/fidelizacion-${stamp}.sql"
     echo ">> Respaldo en backups/fidelizacion-${stamp}.sql"
+    if docker compose -f "$COMPOSE_FILE" exec -T api sh -c 'cat "${CATALOGO_PATH:-/app/data/catalogo.json}"' > "backups/catalogo-${stamp}.json"; then
+      echo ">> Catalogo respaldado en backups/catalogo-${stamp}.json"
+    else
+      rm -f "backups/catalogo-${stamp}.json"
+      echo ">> No se pudo respaldar el catalogo (la API no esta corriendo?)"
+    fi
     ;;
   *)
     echo "Uso: deploy.sh [up|down|update|logs|backup]"

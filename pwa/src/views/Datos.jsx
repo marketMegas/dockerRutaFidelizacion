@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, fmtFecha } from '../api.js'
+import { api, fmtFecha, fmtPuntos } from '../api.js'
 
 export default function Datos({ cliente, refrescar }) {
   const [cedula, setCedula] = useState('')
@@ -38,14 +38,15 @@ export default function Datos({ cliente, refrescar }) {
       <h2>Mis datos</h2>
 
       <div className="saldo">
-        <span className="saldo-v">{cliente.puntos}</span>
+        <span className="saldo-v">{fmtPuntos(cliente.puntos)}</span>
         <span className="saldo-t">puntos disponibles</span>
       </div>
 
       {!cliente.cedula && (
         <form className="cedula-pendiente" onSubmit={guardarCedula}>
           <p className="muted">
-            Necesitamos tu cédula para reclamar recompensas. Agrégala para poder canjear.
+            Agrega tu cédula para identificar tu cuenta en la estación. Es opcional para
+            canjear.
           </p>
           <div className="fila">
             <input

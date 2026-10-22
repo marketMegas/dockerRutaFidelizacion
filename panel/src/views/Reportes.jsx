@@ -27,15 +27,6 @@ export default function Reportes() {
     cargarCanjes(cedula)
   }
 
-  async function entregar(id) {
-    try {
-      await api(`/admin/canjes/${id}/entregado`, { method: 'POST' })
-      cargar()
-    } catch (e) {
-      setError(e.message)
-    }
-  }
-
   const maxLitros = Math.max(1, ...ventas.map((v) => v.litros))
 
   return (
@@ -80,7 +71,7 @@ export default function Reportes() {
         </tbody>
       </table>
 
-      <h3>Canjes recientes</h3>
+      <h3>Códigos entregados</h3>
       <form className="fila" onSubmit={buscar}>
         <input
           inputMode="numeric"
@@ -107,10 +98,10 @@ export default function Reportes() {
             <th>Fecha</th>
             <th>Cliente</th>
             <th>Cédula</th>
-            <th>Recompensa</th>
+            <th>Placa</th>
+            <th>Premio</th>
+            <th>Código</th>
             <th>Puntos</th>
-            <th>Estado</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -119,18 +110,18 @@ export default function Reportes() {
               <td data-label="Fecha">{fmtFecha(c.created_at)}</td>
               <td data-label="Cliente">{c.cliente || '-'}</td>
               <td data-label="Cédula">{c.cedula || '-'}</td>
-              <td data-label="Recompensa">{c.recompensa || '-'}</td>
-              <td data-label="Puntos">{c.puntos_costo}</td>
-              <td data-label="Estado">{c.estado}</td>
-              <td className="celda-acciones">
-                {c.estado !== 'entregado' && <button onClick={() => entregar(c.id)}>Marcar entregado</button>}
+              <td data-label="Placa">{c.placa || '-'}</td>
+              <td data-label="Premio">{c.premio || '-'}</td>
+              <td data-label="Código">
+                <span className="codigo-panel">{c.codigo}</span>
               </td>
+              <td data-label="Puntos">{c.puntos_costo}</td>
             </tr>
           ))}
           {canjes.length === 0 && (
             <tr>
               <td colSpan="7" className="muted">
-                Sin canjes registrados
+                Sin códigos entregados
               </td>
             </tr>
           )}

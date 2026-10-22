@@ -45,6 +45,15 @@ def test_vigencia_por_fechas(db):
 
     db.add(Regla(nombre="Hoy", puntos_por_litro=Decimal("0.50"), prioridad=1, desde=ahora - timedelta(days=1)))
     db.commit()
-    puntos, regla = calcular_puntos(db, 20, ahora)
+    puntos, regla = calcular_puntos(db, 20, ahora=ahora)
     assert regla.nombre == "Hoy"
     assert puntos == 10
+
+
+def test_el_multiplicador_del_nivel_suma_puntos(db):
+    db.add(Regla(nombre="Base", puntos_por_litro=Decimal("1.00")))
+    db.commit()
+    puntos, _ = calcular_puntos(db, 100, 1.5)
+    assert puntos == 150
+    puntos, _ = calcular_puntos(db, 99, 1.25)
+    assert puntos == 123

@@ -9,6 +9,9 @@ def test_flujo_completo(client, admin_headers):
     assert perfil.json()["placa"] == "TST101"
     assert perfil.json()["cedula"] == "3001112233"
     assert perfil.json()["telefono"] == "3001112233"
+    assert perfil.json()["nivel"]["clave"] == "arranque"
+    assert perfil.json()["multiplicador"] == 1.0
+    assert [n["clave"] for n in perfil.json()["niveles"]] == ["arranque", "plata", "oro", "diamante"]
 
     venta = enviar_venta(client, "F-001", 20.0, 40000, telefono="3001112233", placa="abc123")
     assert venta.status_code == 200, venta.text
@@ -23,9 +26,9 @@ def test_flujo_completo(client, admin_headers):
     assert duplicada.json()["duplicado"] is True
     assert duplicada.json()["saldo"] == 20
 
-    recompensas = client.get(f"{PREFIX}/recompensas")
-    assert recompensas.status_code == 200
-    assert len(recompensas.json()) >= 1
+    catalogo = client.get(f"{PREFIX}/catalogo")
+    assert catalogo.status_code == 200
+    assert len(catalogo.json()["premios"]) >= 1
 
     movimientos = client.get(f"{PREFIX}/clientes/me/movimientos", headers=headers)
     assert movimientos.status_code == 200
@@ -58,24 +61,27 @@ def test_endpoint_qr_no_existe(client):
 
 def test_canje_y_reversion_admin(client, admin_headers):
     headers = login_cliente(client, "TST105", "3001234567", "Pedro")
+    # 300 L en el mes: el nivel es Oro (x1.5), asi que la venta da 450 puntos.
     enviar_venta(client, "F-100", 300.0, 600000, telefono="3001234567")
 
-    recompensas = client.get(f"{PREFIX}/recompensas").json()
-    cafe = next(r for r in recompensas if r["nombre"] == "Cafe gratis")
-
-    canje = client.post(f"{PREFIX}/canjes", json={"recompensa_id": cafe["id"]}, headers=headers)
+    canje = client.post(f"{PREFIX}/canjes", json={"premio_clave": "cafe"}, headers=headers)
     assert canje.status_code == 201, canje.text
-    assert canje.json()["saldo"] == 200
+    assert canje.json()["saldo"] == 350
+    assert canje.json()["codigo"]
+    assert canje.json()["premio"] == "Café gratis"
+    assert canje.json()["nivel"] == "Oro"
 
     mis = client.get(f"{PREFIX}/canjes/mis", headers=headers)
     assert mis.status_code == 200
     assert len(mis.json()) == 1
+    assert mis.json()[0]["codigo"] == canje.json()["codigo"]
 
     resumen = client.get(f"{PREFIX}/admin/resumen", headers=admin_headers)
     assert resumen.status_code == 200
     data = resumen.json()
     assert data["puntos_canjeados_mes"] == 100
     assert data["ventas_mes"]["cantidad"] >= 1
+    assert data["codigos_entregados"] == 1
 
 
 def test_admin_protegido(client):
@@ -98,12 +104,16 @@ def test_placa_del_cliente(client, admin_headers):
     assert lista.status_code == 200
     assert lista.json()["total"] == 1
     assert lista.json()["clientes"][0]["placa"] == "ABC456"
+    assert lista.json()["clientes"][0]["nivel"]["clave"] == "arranque"
+    assert lista.json()["clientes"][0]["nivel"]["multiplicador"] == 1.0
+    assert lista.json()["clientes"][0]["consumo_mes"] == 12.5
 
     detalle = client.get(
         f"{PREFIX}/admin/clientes/{lista.json()['clientes'][0]['id']}", headers=admin_headers
     )
     assert detalle.status_code == 200
     assert detalle.json()["cliente"]["placa"] == "ABC456"
+    assert detalle.json()["cliente"]["nivel"]["clave"] == "arranque"
 
 
 def test_sync_ignora_placa_invalida(client, admin_headers):
@@ -273,78 +283,6 @@ def test_editar_regla_inexistente(client, admin_headers):
     assert resp.status_code == 404
 
 
-def test_recompensa_con_imagen(client, admin_headers):
-    resp = client.post(
-        f"{PREFIX}/admin/recompensas",
-        json={
-            "nombre": "Cafe con imagen",
-            "descripcion": "Un cafe de la casa",
-            "imagen": "https://cdn.ejemplo.com/cafe.jpg",
-            "costo_puntos": 150,
-            "stock": 5,
-            "activa": True,
-        },
-        headers=admin_headers,
-    )
-    assert resp.status_code == 201, resp.text
-    recompensa_id = resp.json()["id"]
-
-    admin = client.get(f"{PREFIX}/admin/recompensas", headers=admin_headers).json()
-    creada = next(r for r in admin if r["id"] == recompensa_id)
-    assert creada["imagen"] == "https://cdn.ejemplo.com/cafe.jpg"
-
-    publicas = client.get(f"{PREFIX}/recompensas").json()
-    publica = next(r for r in publicas if r["id"] == recompensa_id)
-    assert publica["imagen"] == "https://cdn.ejemplo.com/cafe.jpg"
-
-
-def test_recompensa_imagen_por_defecto(client, admin_headers):
-    resp = client.post(
-        f"{PREFIX}/admin/recompensas",
-        json={"nombre": "Sin imagen", "costo_puntos": 80, "stock": 3, "activa": True},
-        headers=admin_headers,
-    )
-    assert resp.status_code == 201, resp.text
-    recompensa_id = resp.json()["id"]
-
-    admin = client.get(f"{PREFIX}/admin/recompensas", headers=admin_headers).json()
-    creada = next(r for r in admin if r["id"] == recompensa_id)
-    assert creada["imagen"] is None
-
-
-def test_editar_imagen_recompensa(client, admin_headers):
-    resp = client.post(
-        f"{PREFIX}/admin/recompensas",
-        json={
-            "nombre": "Lavada con foto",
-            "imagen": "https://cdn.ejemplo.com/antes.jpg",
-            "costo_puntos": 200,
-            "stock": 4,
-            "activa": True,
-        },
-        headers=admin_headers,
-    )
-    assert resp.status_code == 201, resp.text
-    recompensa_id = resp.json()["id"]
-
-    resp = client.put(
-        f"{PREFIX}/admin/recompensas/{recompensa_id}",
-        json={
-            "nombre": "Lavada con foto",
-            "imagen": "https://cdn.ejemplo.com/despues.jpg",
-            "costo_puntos": 200,
-            "stock": 4,
-            "activa": True,
-        },
-        headers=admin_headers,
-    )
-    assert resp.status_code == 200, resp.text
-
-    admin = client.get(f"{PREFIX}/admin/recompensas", headers=admin_headers).json()
-    editada = next(r for r in admin if r["id"] == recompensa_id)
-    assert editada["imagen"] == "https://cdn.ejemplo.com/despues.jpg"
-
-
 def test_sync_asocia_placa_nueva(client, admin_headers):
     headers = login_cliente(client, "TST109", "3009998877", "Nora")
     venta = enviar_venta(client, "F-ASOC-1", 15.0, 30000, telefono="3009998877", placa="tst110")
@@ -444,15 +382,14 @@ def test_admin_canjes_busca_por_cedula(client, admin_headers):
     headers = login_cliente(client, "TST118", "3003334511", "G")
     enviar_venta(client, "F-CD-1", 300.0, 600000, telefono="3003334511")
 
-    recompensas = client.get(f"{PREFIX}/recompensas").json()
-    cafe = next(r for r in recompensas if r["nombre"] == "Cafe gratis")
-    canje = client.post(f"{PREFIX}/canjes", json={"recompensa_id": cafe["id"]}, headers=headers)
+    canje = client.post(f"{PREFIX}/canjes", json={"premio_clave": "cafe"}, headers=headers)
     assert canje.status_code == 201, canje.text
 
     lista = client.get(f"{PREFIX}/admin/canjes?q=3003334511", headers=admin_headers)
     assert lista.status_code == 200
     assert len(lista.json()) == 1
     assert lista.json()[0]["cedula"] == "3003334511"
+    assert lista.json()[0]["codigo"] == canje.json()["codigo"]
 
     vacio = client.get(f"{PREFIX}/admin/canjes?q=0000000000", headers=admin_headers)
     assert vacio.json() == []

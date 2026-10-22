@@ -1,9 +1,10 @@
 # Sistema de Fidelizacion GLP
 
 Programa de puntos para una estacion de GLP (autogas): los clientes acumulan puntos por cada
-litro que cargan, se identifican con la placa de su vehiculo, y canjean recompensas presentando
-su cedula en la estacion.
-La administracion de la estacion gestiona reglas, recompensas, clientes y reportes.
+litro que cargan, se identifican con la placa de su vehiculo y suben de nivel segun su consumo
+mensual. Cada nivel multiplica los puntos que suman sus litros. Los premios se canjean desde la
+PWA y el cliente recibe un **codigo de 8 caracteres** que presenta en la estacion.
+La administracion gestiona reglas, niveles, catalogo de premios, clientes y reportes.
 
 Pensado para desplegarse en el VPS Hostinger (AlmaLinux 9 + CyberPanel/OpenLiteSpeed) junto a
 los otros sitios del servidor, y para arrancar en modo simulado mientras se define la
@@ -15,7 +16,7 @@ integracion con Zencillo.
 |-----------------------|-------------------------------------------------------------|-----------------------------|---------------|
 | `api/`                | Backend: reglas, puntos (ledger), auth OTP/JWT, admin        | FastAPI + SQLAlchemy + Postgres | 127.0.0.1:8002 |
 | `panel/`              | Panel de administracion (React SPA)                          | React 18 + Vite + nginx     | 127.0.0.1:5139 |
-| `pwa/`                | App del cliente (instalable, muestra saldo)                  | React 18 + Vite + nginx     | 127.0.0.1:5140 |
+| `pwa/`                | App del cliente (instalable: saldo, nivel y codigos)         | React 18 + Vite + nginx     | 127.0.0.1:5140 |
 | `connector-zencillo/` | Trae ventas desde Zencillo (o simulador) hacia la API        | Python + requests           | -             |
 | `deploy/`             | Script de despliegue y plantillas de LiteSpeed               | bash                        | -             |
 | `db`                  | PostgreSQL 17                                                | postgres:17-alpine          | 127.0.0.1:5433 |
@@ -23,11 +24,36 @@ integracion con Zencillo.
 
 Flujo de puntos: el conector envia una venta a `POST /fid-api/sync/venta` con el telefono del
 cliente y la placa del vehiculo (la ultima placa queda guardada en el cliente); la API
-calcula puntos con la regla vigente y registra un movimiento inmutable
-en el ledger. El panel y la PWA leen saldos y movimientos desde la misma API.
+calcula los puntos con la regla vigente y con el **multiplicador del nivel** del cliente, y
+registra un movimiento inmutable en el ledger. El panel y la PWA leen saldos y movimientos
+desde la misma API.
 
 El ledger nunca borra movimientos: los canjes y reversos se anotan como movimientos nuevos. Un
 reverso que dejaria el saldo en negativo se rechaza.
+
+## Niveles, catalogo y codigos
+
+- **Nivel por consumo mensual.** El nivel efectivo es el mayor entre el nivel alcanzado con
+  los litros del **mes anterior** y el del **mes en curso**: al empezar el mes se conserva el
+  nivel ganado y se pierde si no se vuelve a alcanzar. El corte usa el calendario local de
+  `TZ_ESTACION` (por defecto `America/Bogota`). Los umbrales y multiplicadores por defecto son
+  Arranque 0 L x1.00, Plata 99 L x1.25, Oro 250 L x1.50 y Diamante 500 L x2.00 (de 500 en
+  adelante es Diamante), y se editan en
+  el panel (**Niveles**).
+- **Catalogo en archivo.** Los niveles y premios viven en un JSON (`CATALOGO_PATH`, por
+  defecto `/app/data/catalogo.json`) dentro del volumen Docker `datos_catalogo`; no hay tabla
+  de recompensas. La plantilla viaja en `api/app/resources/catalogo_inicial.json` y se copia
+  sola la primera vez. El panel lee y guarda el catalogo con control de version (409 si otro
+  administrador lo cambio).
+- **Codigos redimibles.** El pool de codigos de cada premio se guarda en el mismo JSON. La
+  disponibilidad es `codigos del archivo - codigos ya asignados en canjes`. Al canjear, la API
+  reserva un codigo de forma atomica (lock del cliente + `unique` en `canjes.codigo`) y lo
+  entrega al cliente; el premio se reclama en la estacion presentando ese codigo. No hay QR,
+  estado de entrega ni verificacion en linea. Un reverso del movimiento de canje **repone el
+  codigo** al pool.
+- **La cedula es opcional para canjear.** El canje se identifica con la sesion del cliente.
+  El panel conserva una bitacora de solo lectura de codigos entregados, con busqueda por
+  cedula.
 
 ## Requisitos
 
@@ -45,22 +71,25 @@ docker compose up -d --build
 
 - PWA cliente: http://localhost:5140 — barra superior con logo y secciones `Inicio`, `Funcionamiento`,
   `Recompensas`, `Ayuda`; con sesion activa el boton cambia a `Salir` y aparece la barra inferior
-  `Mis datos` / `Historial`
+  `Mis datos` / `Historial`. El inicio muestra el saldo, la escalera de niveles y el avance hacia
+  el siguiente nivel; en `Recompensas` se canjea y se ve el codigo entregado.
 - Panel admin: http://localhost:5139/panel/  (usuario `admin` / `admin123` por defecto)
+  con secciones Resumen, Clientes, Reglas de puntos, **Niveles**, **Catalogo** y Reportes.
 - API: http://localhost:8002/health
 - Conector (opcional, perfil aparte): `docker compose --profile conector up -d`
 
 El acceso del cliente es por **placa** (3 letras seguidas de 3 numeros, ej. `ABC123`, sin espacios
 ni guiones; se valida antes de registrar). En la PWA el usuario escribe la placa de su vehiculo;
 si ya existe le enviamos el codigo al celular registrado, y si no existe se auto-registra con
-**cedula obligatoria** + celular + nombre. La placa sirve para entrar y acumular; el
-**reclamo de recompensas se hace presentando la cedula** en la estacion (el panel busca el canje
-por cedula y lo marca entregado).
+**cedula obligatoria** + celular + nombre. La placa sirve para entrar y acumular; el **canje se
+hace en la PWA** con la sesion iniciada y la cedula no es requisito para canjear (solo para
+registrar una cuenta nueva).
 Un mismo **numero de celular puede tener varias placas** registradas: la cuenta y el saldo de
 puntos son del celular, y cada vehiculo se asocia a esa cuenta (al iniciar sesion con la placa
 nueva o desde el panel). El historial y los canjes son unicos por cuenta.
 Los clientes creados antes de exigir cedula pueden agregarla en `Mis datos` (PWA) o desde el
-panel (`PATCH /admin/clientes/{id}`); sin cedula no pueden reclamar canjes.
+panel (`PATCH /admin/clientes/{id}`); la cedula no es necesaria para canjear, solo para
+registrar una cuenta nueva.
 Con `DEBUG=True` (y `SMS_PROVIDER=debug`) la API devuelve el codigo OTP en la respuesta
 (`debug_codigo`), util para probar el login sin SMS. En produccion se fija `DEBUG=False` y se
 configura `SMS_PROVIDER`/`SMS_API_URL` para enviar el codigo por SMS
@@ -109,17 +138,20 @@ Prefijo `API_PREFIX=/fid-api`.
 - `GET  /fid-api/clientes/me`, `/me/movimientos` — datos del cliente autenticado (`placas`, `cedula`).
 - `PATCH /fid-api/clientes/me` — el cliente agrega/actualiza su cedula (duplicada = 409).
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.
-- `GET  /fid-api/recompensas`, `POST /fid-api/canjes`, `GET /fid-api/canjes/mis` — recompensas y canjes.
-- `GET  /fid-api/config` — publico; tasa vigente (`puntos_por_litro`) para mostrar equivalencias en la PWA.
-- `GET  /fid-api/admin/resumen|ventas|clientes|canjes|reglas|recompensas` y endpoints de gestion/reverso.
-  `GET /admin/canjes?q=<cedula>` filtra los canjes por cedula del cliente.
+- `GET  /fid-api/catalogo` — publico; premios activos con su costo y `codigos_disponibles` (no expone los codigos).
+- `POST /fid-api/canjes` `{premio_clave}` — canje autenticado; devuelve `canje_id`, `codigo`, `premio`,
+  `puntos_costo`, `saldo` y `nivel`. `GET /fid-api/canjes/mis` — codigos del cliente.
+- `GET  /fid-api/config` — publico; tasa vigente (`puntos_por_litro`) y la escalera de `niveles`.
+- `GET  /fid-api/admin/resumen|ventas|clientes|canjes|reglas|catalogo` y endpoints de gestion/reverso.
+  `GET /admin/canjes?q=<cedula>` filtra la bitacora de codigos entregados por cedula (solo lectura).
 - `PATCH /fid-api/admin/clientes/{id}` — editar nombre/cedula del cliente desde el panel.
 - `POST /fid-api/admin/reglas` y `PUT /fid-api/admin/reglas/{id}` — crear y editar reglas (edicion parcial:
   solo se pisan los campos enviados; valida nombre duplicado con 409 y `desde > hasta` con 400).
-- `POST /fid-api/admin/recompensas` y `PUT /fid-api/admin/recompensas/{id}` — crear y editar recompensas.
-  El campo `imagen` es la **URL** (max. 500) de la foto de referencia que se muestra en la tarjeta
-  de la PWA; el backend no almacena archivos, la copian/pegan en el panel. `null` muestra un
-  bloque de rayas de respaldo.
+- `GET/PUT /fid-api/admin/catalogo` — leer y guardar niveles + premios + pool de codigos con
+  `version` (409 si otro administrador guardo antes). El campo `imagen` es la **URL** (max. 500) de
+  la foto de referencia de la tarjeta; el backend no almacena archivos.
+- `POST /fid-api/admin/catalogo/{clave}/codigos` `{cantidad}` — genera codigos nuevos para un premio
+  (maximo 5000 por llamada) y los agrega al pool.
 
 Documentacion interactiva: `/docs`.
 
@@ -193,10 +225,12 @@ Los contenedores se enlazan a `127.0.0.1`, así que no hace falta abrir puertos 
 firewalld (solo 80/443/SSH). OpenLiteSpeed llega a los contenedores por loopback; no se
 requiere desactivar SELinux.
 
-### 7. Respaldo de base de datos
+### 7. Respaldo de base de datos y catalogo
 
-`./deploy/deploy.sh backup` genera un volcado en `backups/`. Programalo en cron si quieres
-respaldos automaticos.
+`./deploy/deploy.sh backup` genera el volcado de Postgres en `backups/fidelizacion-<stamp>.sql`
+y una copia del catalogo en `backups/catalogo-<stamp>.json`. Programalo en cron si quieres
+respaldos automaticos. El catalogo tambien se puede copiar del volumen
+`fidelizacion-glp_datos_catalogo`; la base de datos **no** guarda los premios ni los codigos.
 
 ### 8. Endurecimiento: pendientes post-despliegue
 
@@ -232,7 +266,8 @@ consume las ventas para calcular puntos.
 cd api && ruff check . && pytest
 ```
 
-La suite cubre el motor de reglas, el ledger (acumulacion, canje, reverso, saldo insuficiente),
-las cuentas multivehiculo (varias placas por celular, cedula obligatoria y su gestion) y los
-endpoints principales a traves de HTTP.
+La suite cubre el motor de reglas, el ledger (acumulacion, canje con codigo, reverso que repone
+el codigo, saldo insuficiente), los niveles por consumo mensual y su corte de mes, el catalogo
+en archivo (version, conflictos, validacion), la generacion de codigos, las cuentas
+multivehiculo y los endpoints principales a traves de HTTP.
 # dockerRutaFidelizacion

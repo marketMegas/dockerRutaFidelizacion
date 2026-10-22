@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
-import { api, fmtFecha } from '../api.js'
+import { api, fmtFecha, fmtPuntos } from '../api.js'
+import BotonCopiar from '../components/BotonCopiar.jsx'
+import CodigoCaja from '../components/CodigoCaja.jsx'
 import RecompensaCard from '../components/RecompensaCard.jsx'
 
 export default function Canjes({ cliente, refrescar }) {
-  const [recompensas, setRecompensas] = useState([])
+  const [premios, setPremios] = useState([])
   const [misCanjes, setMisCanjes] = useState([])
   const [cargando, setCargando] = useState(true)
-  const [mensaje, setMensaje] = useState('')
+  const [canjeando, setCanjeando] = useState('')
+  const [entregado, setEntregado] = useState(null)
   const [error, setError] = useState('')
 
   function cargar() {
     setCargando(true)
-    api('/recompensas')
-      .then(setRecompensas)
+    api('/catalogo')
+      .then((data) => setPremios(data.premios || []))
       .catch((e) => setError(e.message))
       .finally(() => setCargando(false))
     api('/canjes/mis').then(setMisCanjes).catch(() => {})
@@ -22,16 +25,18 @@ export default function Canjes({ cliente, refrescar }) {
     cargar()
   }, [])
 
-  async function canjear(r) {
+  async function canjear(premio) {
     setError('')
-    setMensaje('')
+    setCanjeando(premio.clave)
     try {
-      const res = await api('/canjes', { method: 'POST', body: { recompensa_id: r.id } })
-      setMensaje(`Canjeaste ${res.recompensa}. Presenta tu cédula para reclamarla.`)
+      const res = await api('/canjes', { method: 'POST', body: { premio_clave: premio.clave } })
+      setEntregado(res)
       await refrescar()
       cargar()
     } catch (e) {
       setError(e.message)
+    } finally {
+      setCanjeando('')
     }
   }
 
@@ -40,12 +45,12 @@ export default function Canjes({ cliente, refrescar }) {
   return (
     <div>
       <h2>Recompensas</h2>
-      <p className="muted">Tienes {puntos} puntos</p>
-      {cliente && !cliente.cedula && (
-        <p className="error">Agrega tu cédula en Mis datos para poder reclamar recompensas.</p>
-      )}
-      {mensaje && <p className="ok">{mensaje}</p>}
+      <p className="muted">
+        Tienes {fmtPuntos(puntos)} puntos. Elige un premio y recibe tu código al instante.
+      </p>
       {error && <p className="error">{error}</p>}
+
+      {entregado && <CodigoCaja codigo={entregado.codigo} premio={entregado.premio} nuevo />}
 
       {cargando ? (
         <div className="premios">
@@ -60,33 +65,39 @@ export default function Canjes({ cliente, refrescar }) {
             </div>
           ))}
         </div>
-      ) : recompensas.length === 0 ? (
-        <p className="vacio">Aún no hay recompensas disponibles</p>
+      ) : premios.length === 0 ? (
+        <p className="vacio">Aún no hay premios disponibles</p>
       ) : (
         <div className="premios">
-          {recompensas.map((r) => (
+          {premios.map((p) => (
             <RecompensaCard
-              key={r.id}
-              recompensa={r}
+              key={p.clave}
+              recompensa={p}
               puntos={puntos}
+              canjeando={canjeando === p.clave}
               onCanjear={canjear}
             />
           ))}
         </div>
       )}
 
-      <h2>Mis canjes</h2>
+      <h2>Mis códigos</h2>
       <ul className="lista">
         {misCanjes.map((c) => (
           <li key={c.id}>
             <div className="lista-info">
-              <strong>{c.recompensa}</strong>
-              <span className="muted">{fmtFecha(c.created_at)}</span>
+              <strong>{c.premio}</strong>
+              <span className="muted">
+                {fmtFecha(c.created_at)} · {fmtPuntos(c.puntos_costo)} pts
+              </span>
             </div>
-            <span className={`badge ${c.estado}`}>{c.estado}</span>
+            <div className="codigo-fila">
+              <span className="codigo-mini">{c.codigo}</span>
+              <BotonCopiar texto={c.codigo} />
+            </div>
           </li>
         ))}
-        {misCanjes.length === 0 && <li className="muted">Aún no has canjeado recompensas</li>}
+        {misCanjes.length === 0 && <li className="muted">Aún no has canjeado premios</li>}
       </ul>
     </div>
   )

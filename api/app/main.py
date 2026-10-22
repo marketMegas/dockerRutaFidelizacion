@@ -6,8 +6,9 @@ from sqlalchemy import func, select
 
 from .config import settings
 from .database import SessionLocal, engine
-from .models import Base, Recompensa, Regla
+from .models import Base, Regla
 from .routers import admin, auth, canjes, clientes, sync
+from .services import catalogo
 
 
 def _seed():
@@ -15,12 +16,11 @@ def _seed():
     try:
         if db.scalar(select(func.count(Regla.id))) == 0:
             db.add(Regla(nombre="Base GLP", puntos_por_litro=1.00, prioridad=0))
-        if db.scalar(select(func.count(Recompensa.id))) == 0:
-            db.add(Recompensa(nombre="Cafe gratis", descripcion="Un cafe en tienda", costo_puntos=100, stock=100))
-            db.add(Recompensa(nombre="Lavada basica", descripcion="Lavado express", costo_puntos=250, stock=50))
         db.commit()
     finally:
         db.close()
+    # El catalogo vive en un archivo: se crea desde la plantilla si no existe.
+    catalogo.leer()
 
 
 @asynccontextmanager

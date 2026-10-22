@@ -1,3 +1,5 @@
+import { fmtPuntos } from '../api.js'
+
 const PRINCIPAL = [
   { key: 'inicio', label: 'Inicio' },
   { key: 'recompensas', label: 'Recompensas' },
@@ -39,7 +41,7 @@ export default function Sidebar({ cliente, vista, onNavegar, onSalir }) {
       </div>
 
       <div className="sidebar-puntos">
-        <span className="sidebar-puntos-v">{cliente?.puntos ?? 0}</span>
+        <span className="sidebar-puntos-v">{fmtPuntos(cliente?.puntos)}</span>
         <span className="sidebar-puntos-t">puntos disponibles</span>
       </div>
 

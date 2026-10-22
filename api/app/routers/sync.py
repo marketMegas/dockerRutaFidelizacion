@@ -7,7 +7,7 @@ from ..database import get_db
 from ..models import Cliente, Vehiculo, Venta
 from ..schemas import VentaSync
 from ..security import normalizar_placa, placa_valida
-from ..services import ledger
+from ..services import ledger, niveles
 from ..services.motor_de_reglas import calcular_puntos
 
 router = APIRouter(prefix="/sync", tags=["sync"])
@@ -59,7 +59,10 @@ def sincronizar_venta(
             vehiculo.activo = True
             cliente.placa = placa
 
-    puntos, regla = calcular_puntos(db, body.volumen_litros)
+    # El nivel se calcula con la venta ya incluida: si la carga cruza un
+    # umbral, esa misma venta se paga con el multiplicador del nivel nuevo.
+    nivel = niveles.nivel_efectivo(db, cliente.id, litros_extra=body.volumen_litros)
+    puntos, regla = calcular_puntos(db, body.volumen_litros, nivel["multiplicador"])
     venta = Venta(
         cliente_id=cliente.id,
         volumen_litros=body.volumen_litros,
@@ -85,4 +88,6 @@ def sincronizar_venta(
         "puntos_otorgados": puntos,
         "saldo": cliente.puntos,
         "regla": regla.nombre if regla else None,
+        "nivel": nivel["nivel"]["nombre"] if nivel["nivel"] else None,
+        "multiplicador": nivel["multiplicador"],
     }

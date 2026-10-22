@@ -40,5 +40,8 @@ backups/
 *.dump
 *.sql
 
+# Listas de importacion (pueden contener datos personales)
+data/import/
+
 # Archivos de quoder
 .quoder

@@ -22,8 +22,11 @@ recompensas, extracto de movimientos).
 Surtidor, manguera y pico de carga, tanque y medidor de nivel, cilindro 17.5 kg,
 regulador, llama piloto, factura de tanqueo, cartilla de sellos, "tanquear", litros vs pesos.
 
-**1 punto = 1 litro** (mientras la regla vigente este a 1.00 pt/L). El costo de cada
-recompensa se lee tambien en litros equivalentes, leido de `GET /fid-api/config`.
+**1 punto base = 1 litro** (mientras la regla vigente este a 1.00 pt/L) y el **nivel del mes
+multiplica** esos puntos (x1.00 Arranque, x1.25 Plata, x1.50 Oro, x2.00 Diamante). El nivel
+efectivo es el mayor entre el del mes anterior y el del mes en curso, asi que el cliente lo
+conserva al empezar el mes y lo pierde si deja de tanquear. El costo de cada premio se lee en
+puntos, sin equivalencia en litros.
 
 ## Firma
 
@@ -47,6 +50,18 @@ interior desde 2026-10-20, por orden del dueno. Completan la firma:
 8. En el catalogo de recompensas (`main.vista--recompensas`) la **imagen es el fondo**
    de la tarjeta: todo el texto se invierte a blanco y el pie (estado + medidor) se
    apoya sobre un velo oscuro, no sobre papel. Ver "Color".
+9. **Ticket de codigo** (2026-10-22, reemplaza al QR): `.codigo-caja` es una tarjeta con el
+   codigo de 8 caracteres en `--display` (`.codigo-valor`, tabular, `7K3M-92XQ`), etiqueta
+   `.codigo-etiqueta`, premio en `.codigo-premio` y acciones `.codigo-acciones` (Copiar /
+   Compartir, `.codigo-accion`, la principal `--fuerte` sobre `--lima`). `.codigo-caja--nuevo`
+   lleva halo `--menta-claro` para el codigo recien canjeado. En "Mis codigos" cada fila usa
+   `.codigo-fila` + `.codigo-mini`. No hay imagen ni verificacion: el codigo es todo el ticket.
+10. **Panel de nivel** (`components/NivelPanel.jsx`): `.nivel-panel` (tarjeta de papel),
+    `.nivel-chip` (nombre del nivel en pastilla azul noche), la escalera `.escalera` con
+    `.peldano` (actual con borde izquierdo menta y fondo `--menta-claro`; nombre, litros y
+    multiplicador en `--display` tabular) y el pie `.nivel-pie` + `.nivel-nota` con los litros
+    del mes, lo que falta para el siguiente nivel y la nota de mantenimiento. El avance usa el
+    mismo `.medidor` de la firma.
 
 ## Profundidad
 
@@ -126,9 +141,9 @@ administracion conserva su propia paleta (ver "Tokens").
 - Sobre `--marca` la tinta es **blanca**: 7.72:1 sobre #073edb y 13.69:1 sobre #082770.
   Nunca `--azul-hondo` sobre azul.
 - Fondo del body **blanco** (`--fondo #ffffff`). Con el fondo blanco el hairline `--linea`
-  dejo de alcanzar para separar: las filas `.lista li` llevan `--sombra-card` y la
-  `.badge` neutra usa `--surface-track` en vez de `--fondo`. No quitar esas dos piezas
-  "porque el borde ya basta": sobre blanco vuelven a fundirse.
+  dejo de alcanzar para separar: las filas `.lista li` llevan `--sombra-card` y las pastillas
+  neutras usan `--surface-track` en vez de `--fondo`. No quitar esas piezas "porque el borde
+  ya basta": sobre blanco vuelven a fundirse.
 - **Sobre foto** (`main.vista--recompensas`) el texto de la tarjeta va **en blanco**
   (`#fff`) con el halo `--halo` (`0 1px 2px rgba(0,0,0,.7), 0 0 18px rgba(0,0,0,.5)`):
   nombre, costo, descripcion y estado ("Te faltan N pts"). Las pastillas
@@ -200,19 +215,29 @@ cambiarlos tambien.
   (`referrerPolicy="no-referrer"`, como las imagenes de recompensa) y el CSP de
   `pwa/nginx.conf` ya permite `img-src https:`. No poner la foto en la barra superior
   (`.navbar`): ahi vive la marca de texto.
-- `pwa/src/components/RecompensaCard.jsx` — tarjeta de recompensa. Props: `recompensa`,
-  `puntos`, `onCanjear`, `mostrarProgreso`, `sobreMenta`.
+- `pwa/src/components/RecompensaCard.jsx` — tarjeta de premio. Props: `recompensa`,
+  `puntos`, `onCanjear`, `canjeando`, `mostrarProgreso`, `sobreMenta`. Usa
+  `recompensa.codigos_disponibles` para el estado agotado (el catalogo ya no tiene `stock`).
   Lee `recompensa.imagen`; si la URL falla (`onError`) vuelve al bloque de rayas.
   Se usa en `views/Canjes.jsx` (con progreso y boton) y en `views/Login.jsx`
   (sin progreso, con `sobreMenta=true` — la prop se llama asi por historia, hoy pinta el
   panel tenue `.premio-card--menta` sobre el body blanco del inicio).
-- `.saldo` — tarjeta de socio: `--grad-socio` (azul `#073edb` → `#082770`), numero en
-  `--tinta-sobre-marca` con relieve claro y chip menta en `.saldo::after` (40x29, arriba a
-  la izquierda).
-  Sin textura de rejilla: la rejilla de `.saldo::before` se elimino por pedido del dueno
-  (2026-10-21), el numero se lee sobre el degradado limpio.
-- `.cabecera` — sticky, `--grad-socio` con `border-bottom: 3px solid --menta`; `.saldo-mini`
+- `pwa/src/components/CodigoCaja.jsx` — recuadro del codigo entregado. Muestra
+  `.codigo-valor` en `--display` (8 caracteres con guion), boton Copiar (`navigator.clipboard`
+  con fallback a textarea + `execCommand`) y Compartir (`navigator.share`, si no existe copia
+  y avisa). El aviso de copiado va en `.codigo-aviso` con `role="status"`.
+- `pwa/src/components/NivelPanel.jsx` — escalera de niveles y avance del mes (ver firma 10).
+  Recibe `cliente` con `nivel`, `multiplicador`, `consumos` y `niveles` (la escalera completa
+  viene en `GET /clientes/me`).
+- `.saldo` — tarjeta de socio: degradado menta claro (`#eefcf7` → `#d6f9ec` → `#b5f2df`),
+  hairline `#b9f0dc`, numero en `--azul-hondo` con relieve claro y `.saldo::after` como chip
+  de contacto (40x29, arriba a la izquierda). Sin textura de rejilla: la rejilla de
+  `.saldo::before` se elimino por pedido del dueno (2026-10-21), el numero se lee sobre el
+  degradado limpio. El saldo ya **no** usa el azul de marca; el azul queda en la barra,
+  la cabecera y las pestanas.
+- `.navbar` — sticky sobre `--marca` con la franja menta en `.navbar::after`; `.saldo-mini`
   es una pildora menta (`--placa` + `--placa-tinta`, sombras interiores), no numero suelto.
+  La clase `.cabecera` ya no existe (la reemplazo el navbar): no reintroducirla.
 - `.tabs` — fija abajo, regla tricolor lima-menta-azul en `.tabs::before`; pestana
   activa en pastilla `--marca` con tinta blanca.
 - `.lista li:has(.pos)` / `:has(.neg)` — acento lateral de 3px segun el signo del
@@ -222,22 +247,32 @@ cambiarlos tambien.
   de cuenta.
 - Estados obligatorios: cargando (`.esqueleto` con `.premio-media` + `.premio-cuerpo`,
   pulso 1.4s), vacio (`.vacio`, y `li.muted` con borde punteado), agotado
-  (`--agotado`), boton `disabled` cuando no alcanza o stock 0.
-- `panel/src/views/Recompensas.jsx` — tabla con miniatura `220x147` (`.miniatura`, 3:2,
-  `object-fit: cover`; en movil la tabla se vuelve tarjeta y la miniatura ocupa el ancho
-  completo con 160px de alto), creacion e edicion inline. La columna `imagen` es una URL
-  publica que se pega en el panel; el backend no almacena archivos.
+  (`--agotado`), boton `disabled` cuando no alcanza o no quedan codigos.
+- `panel/src/views/Clientes.jsx` — tabla con la columna **Nivel** (`GET /admin/clientes` devuelve
+  `nivel` y `consumo_mes`): `.nivel-celda` con `.nivel-tag` (pastilla `#eef7ea` / `--green-3`)
+  y el multiplicador en `.muted`; el detalle repite el nivel en el encabezado.
+- `panel/src/views/Catalogo.jsx` — reemplaza a `Recompensas.jsx` (borrado). Tabla con
+  miniatura `220x147` (`.miniatura`, 3:2, `object-fit: cover`; en movil la tabla se vuelve
+  tarjeta y la miniatura ocupa el ancho completo con 160px de alto), contadores de codigos
+  disponibles/entregados, creacion y edicion inline. La columna `imagen` es una URL publica
+  que se pega en el panel; el backend no almacena archivos. La edicion del pool abre una
+  fila `colspan` con `.campo-codigos`: `.contador-codigos`, `.area-codigos` (monospace, un
+  codigo por linea), `.fila-codigos`/`.campo-generar` para generar codigos y `.sin-guardar`
+  cuando hay cambios sin guardar. Guardar envia **todo** el catalogo (incluidos los codigos):
+  si se omite el pool, se vacia.
+- `panel/src/views/Niveles.jsx` — tabla Nivel / Litros en el mes / Multiplicador / Descripcion
+  con edicion inline (mismo patron `.celda-edicion`). Guarda niveles y premios juntos con
+  `PUT /admin/catalogo` para no perder el pool de codigos.
 - **La edicion del panel se despliega como un panel, no como inputs en las columnas.**
   La fila de edicion es una unica celda `colspan` (`.celda-edicion`) con el formulario en
   rejilla (`.form-edicion`, `repeat(auto-fit, minmax(200px, 1fr))`, campos con `<label>`,
   preview 84x56 de la imagen y botones `Guardar`/`Cancelar` alineados a la derecha).
   Motivo (2026-10-21): con un input por columna la tabla crecia de 1110px a 1515px y los
   botones quedaban fuera de la ventana; los inputs no pueden encogerse porque
-  `table-layout: auto` usa su ancho intrinseco. Aplica a `Recompensas.jsx` y
+  `table-layout: auto` usa su ancho intrinseco. Aplica a `Catalogo.jsx`, `Niveles.jsx` y
   `Reglas.jsx` (mismo patron inline). No volver a meter los inputs en las columnas.
-- `.qr-card`, `.qr-img`, `.qr-titulo`, `.qr-hint`, `.qr-vacio` — estilos del ticket QR
-  que siguen en la hoja pero sin uso desde que el QR salio de la PWA. Se conservan por si
-  vuelve el canje con codigo; si no, son candidatos a borrarse.
+- `.codigo-panel` — el codigo entregado en la bitacora read-only de `Reportes.jsx`
+  (monospace, `letter-spacing`, `white-space: nowrap`).
 
 ## Reglas de layout que no hay que romper
 
@@ -267,7 +302,7 @@ cambiarlos tambien.
 --menta --lima                                 acento y accion
 --placa --placa-tinta                          el numero que importa
 --peligro --peligro-fondo --peligro-linea      errores
---menta-claro --azul-claro                     fondos de pastilla y badge
+--menta-claro --azul-claro                     fondos de pastilla, chip y aviso
 --surface-track                                pista del medidor, esqueletos, controles deshabilitados
 --space-1..5                                   escala de espaciado (base 0.25rem)
 --radius-ctrl --radius-card --radius-panel     radios
@@ -293,9 +328,12 @@ anteriores de este documento no existen en ninguno de los dos hojas de estilo. S
 
 ## Verificacion
 
-`ruff check .` + `pytest` en `api/`; `docker compose up -d --build api panel pwa` (la
-migracion nueva se aplica sola al reiniciar el api); `.\dev.ps1 health` (5x200);
-`.\dev.ps1 e2e`. Verificar clases nuevas en el bundle servido en `http://127.0.0.1:5140/`.
+`ruff check .` + `pytest` en `api/` (80 tests); `docker compose up -d --build api panel pwa`
+(la migracion nueva se aplica sola al reiniciar el api); `.\dev.ps1 health` (5x200);
+`.\dev.ps1 e2e` (venta, niveles y multiplicador). Verificar clases nuevas en el bundle servido
+en `http://127.0.0.1:5140/`. Para el canje: pedir OTP, `POST /canjes {premio_clave}`, comprobar
+el codigo en `GET /canjes/mis` y que `codigos_disponibles` baje en `GET /catalogo`; el panel lo
+lista en Reportes (solo lectura).
 
 Para revisar solo estilos sin tocar el stack: `npx vite build` en `pwa/` y
 `docker cp pwa/dist/. fidelizacion-glp-pwa-1:/usr/share/nginx/html/`. El contenedor

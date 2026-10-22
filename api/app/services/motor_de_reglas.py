@@ -21,10 +21,16 @@ def regla_vigente(db: Session, ahora: datetime | None = None) -> Regla | None:
     )
 
 
-def calcular_puntos(db: Session, litros, ahora: datetime | None = None) -> tuple[int, Regla | None]:
+def calcular_puntos(
+    db: Session,
+    litros,
+    multiplicador: float = 1.0,
+    ahora: datetime | None = None,
+) -> tuple[int, Regla | None]:
+    """Puntos de una venta. El multiplicador es el del nivel del cliente."""
     regla = regla_vigente(db, ahora)
     if regla is None:
         return 0, None
-    bruto = Decimal(str(litros)) * Decimal(regla.puntos_por_litro)
+    bruto = Decimal(str(litros)) * Decimal(regla.puntos_por_litro) * Decimal(str(multiplicador))
     puntos = int(bruto.to_integral_value(rounding=ROUND_FLOOR))
     return max(puntos, 0), regla

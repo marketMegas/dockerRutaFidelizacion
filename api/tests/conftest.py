@@ -1,4 +1,5 @@
 import os
+import tempfile
 from pathlib import Path
 
 os.environ["DEBUG"] = "True"
@@ -12,15 +13,31 @@ os.environ["API_PREFIX"] = "/fid-api"
 # asi que se sube el tope para no bloquear la suite.
 os.environ["ADMIN_RATE_MAX"] = "100000"
 
+# El catalogo se aislia en un archivo propio: las pruebas no tocan el de la app.
+CATALOGO_TEST = Path(tempfile.gettempdir()) / "fidelizacion_catalogo_test.json"
+os.environ["CATALOGO_PATH"] = str(CATALOGO_TEST)
+
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.database import SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Base  # noqa: E402
+from app.services import catalogo  # noqa: E402
 
 DB_FILE = Path("test_fidelizacion.db")
 PREFIX = "/fid-api"
+
+
+@pytest.fixture(autouse=True)
+def catalogo_limpio():
+    """Cada prueba parte del catalogo de la plantilla."""
+    if CATALOGO_TEST.exists():
+        CATALOGO_TEST.unlink()
+    catalogo.invalidar_cache()
+    catalogo.leer()
+    yield
+    catalogo.invalidar_cache()
 
 
 @pytest.fixture()

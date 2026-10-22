@@ -57,17 +57,37 @@ class ReglaPatchIn(BaseModel):
     hasta: datetime | None = None
 
 
-class RecompensaIn(BaseModel):
-    nombre: str = Field(min_length=2, max_length=120)
-    descripcion: str | None = None
-    imagen: str | None = Field(default=None, max_length=500)
+class NivelIn(BaseModel):
+    clave: str = Field(min_length=1, max_length=60)
+    nombre: str = Field(min_length=1, max_length=80)
+    minimo: float = Field(ge=0)
+    multiplicador: float = Field(gt=0)
+    descripcion: str = ""
+
+
+class PremioIn(BaseModel):
+    clave: str = Field(min_length=1, max_length=60)
+    nombre: str = Field(min_length=1, max_length=120)
+    descripcion: str = ""
+    imagen: str = ""
     costo_puntos: int = Field(gt=0)
-    stock: int = Field(ge=0)
-    activa: bool = True
+    activo: bool = True
+    codigos: list[str] = Field(default_factory=list)
+
+
+class CatalogoIn(BaseModel):
+    version: int = 0
+    niveles: list[NivelIn] = Field(default_factory=list)
+    premios: list[PremioIn] = Field(default_factory=list)
+
+
+class GenerarCodigosIn(BaseModel):
+    cantidad: int = Field(gt=0, le=5000)
 
 
 class CanjeIn(BaseModel):
-    recompensa_id: int
+    premio_clave: str = Field(min_length=1, max_length=60)
+
 
 
 class VehiculoIn(BaseModel):

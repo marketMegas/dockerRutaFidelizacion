@@ -1,14 +1,19 @@
+import { fmtPuntos } from '../api.js'
+import NivelPanel from '../components/NivelPanel.jsx'
+
 export default function Saldo({ cliente, refrescar }) {
   return (
     <div className="inicio">
       <div className="saldo">
-        <span className="saldo-v">{cliente?.puntos ?? 0}</span>
+        <span className="saldo-v">{fmtPuntos(cliente?.puntos)}</span>
         <span className="saldo-t">puntos disponibles</span>
       </div>
 
+      <NivelPanel cliente={cliente} />
+
       <p className="muted">
-        Acumula puntos por cada litro que cargas y canjéalos por recompensas. Identifícate con tu
-        placa para sumar y presenta tu cédula al reclamar.
+        Cada litro que cargas suma puntos y tu nivel del mes los multiplica. Canjea en
+        Recompensas y recibe un código para reclamar tu premio en la estación.
       </p>
 
       <button className="primario" onClick={refrescar}>

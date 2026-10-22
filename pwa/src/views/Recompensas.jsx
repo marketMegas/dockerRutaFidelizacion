@@ -3,13 +3,13 @@ import { api } from '../api.js'
 import RecompensaCard from '../components/RecompensaCard.jsx'
 
 export default function Recompensas({ onSesion }) {
-  const [recompensas, setRecompensas] = useState([])
+  const [premios, setPremios] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api('/recompensas')
-      .then(setRecompensas)
+    api('/catalogo')
+      .then((data) => setPremios(data.premios || []))
       .catch((e) => setError(e.message))
       .finally(() => setCargando(false))
   }, [])
@@ -33,12 +33,12 @@ export default function Recompensas({ onSesion }) {
             </div>
           ))}
         </div>
-      ) : recompensas.length === 0 ? (
-        <p className="vacio">Aún no hay recompensas disponibles</p>
+      ) : premios.length === 0 ? (
+        <p className="vacio">Aún no hay premios disponibles</p>
       ) : (
         <div className="premios">
-          {recompensas.map((r) => (
-            <RecompensaCard key={r.id} recompensa={r} mostrarProgreso={false} />
+          {premios.map((p) => (
+            <RecompensaCard key={p.clave} recompensa={p} mostrarProgreso={false} />
           ))}
         </div>
       )}

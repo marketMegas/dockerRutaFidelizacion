@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Canje, Cliente, LedgerPuntos, Recompensa, Venta
+from ..models import Canje, Cliente, LedgerPuntos, Venta
 
 
 class LedgerError(ValueError):
@@ -48,25 +48,46 @@ def registrar_acumulacion(db: Session, cliente: Cliente, venta: Venta, puntos: i
     )
 
 
-def realizar_canje(db: Session, cliente: Cliente, recompensa: Recompensa) -> Canje:
-    if not recompensa.activa:
-        raise LedgerError("Recompensa inactiva")
-    if recompensa.stock <= 0:
-        raise LedgerError("Recompensa sin stock")
-    if cliente.puntos < recompensa.costo_puntos:
+def codigo_disponible(db: Session, premio: dict) -> str | None:
+    """Primer codigo del premio que todavia no se ha entregado."""
+    codigos = list(premio.get("codigos") or [])
+    if not codigos:
+        return None
+    asignados = set(db.scalars(select(Canje.codigo).where(Canje.codigo.in_(codigos))).all())
+    for codigo in codigos:
+        if codigo not in asignados:
+            return codigo
+    return None
+
+
+def realizar_canje(db: Session, cliente: Cliente, premio: dict) -> Canje:
+    """Canjea un premio del catalogo y reserva su codigo para el cliente."""
+    if not premio.get("activo", True):
+        raise LedgerError("El premio no esta disponible")
+    costo = int(premio["costo_puntos"])
+    if cliente.puntos < costo:
         raise SaldoInsuficienteError("Puntos insuficientes para el canje")
 
-    recompensa.stock -= 1
-    canje = Canje(cliente_id=cliente.id, recompensa_id=recompensa.id, puntos_costo=recompensa.costo_puntos)
+    codigo = codigo_disponible(db, premio)
+    if codigo is None:
+        raise LedgerError("No hay codigos disponibles de este premio")
+
+    canje = Canje(
+        cliente_id=cliente.id,
+        premio_clave=str(premio["clave"]),
+        premio_nombre=str(premio["nombre"]),
+        codigo=codigo,
+        puntos_costo=costo,
+    )
     db.add(canje)
     db.flush()
     _aplicar(
         db,
         cliente,
-        -recompensa.costo_puntos,
+        -costo,
         "canje",
         referencia=f"canje:{canje.id}",
-        motivo=f"Canje: {recompensa.nombre}",
+        motivo=f"Canje: {premio['nombre']}",
     )
     return canje
 
@@ -83,4 +104,9 @@ def reversar_movimiento(db: Session, mov_id: int, motivo: str) -> LedgerPuntos:
         raise LedgerError("El movimiento ya fue reversado")
 
     cliente = db.get(Cliente, mov.cliente_id)
+    if mov.tipo == "canje" and mov.referencia and mov.referencia.startswith("canje:"):
+        # Al anular un canje el codigo vuelve al pool del catalogo.
+        canje = db.get(Canje, int(mov.referencia.split(":", 1)[1]))
+        if canje is not None:
+            db.delete(canje)
     return _aplicar(db, cliente, -mov.cantidad, "reverso", referencia=f"reverso:{mov.id}", motivo=motivo)

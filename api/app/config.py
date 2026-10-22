@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     SMS_API_URL: str = ""
     SMS_API_KEY: str = ""
     SMS_FROM: str = "FidelizacionGLP"
+    CATALOGO_PATH: str = "/app/data/catalogo.json"
+    TZ_ESTACION: str = "America/Bogota"
 
     @property
     def cors_list(self) -> list[str]:

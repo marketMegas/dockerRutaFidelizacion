@@ -7,6 +7,7 @@ from ..deps import require_cliente
 from ..models import Cliente, LedgerPuntos, Vehiculo
 from ..schemas import ClientePatchIn
 from ..security import cedula_valida, normalizar_cedula
+from ..services import catalogo, niveles
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
 
@@ -21,6 +22,9 @@ def _perfil(db: Session, cliente: Cliente) -> dict:
             .order_by(Vehiculo.id)
         ).all()
     )
+    nivel = niveles.nivel_efectivo(db, cliente.id)
+    siguiente = nivel["siguiente"]
+    actual = nivel["nivel"]
     return {
         "id": cliente.id,
         "cedula": cliente.cedula,
@@ -31,6 +35,27 @@ def _perfil(db: Session, cliente: Cliente) -> dict:
         "email": cliente.email,
         "puntos": cliente.puntos,
         "created_at": cliente.created_at,
+        "nivel": (
+            {
+                "clave": actual["clave"],
+                "nombre": actual["nombre"],
+                "minimo": actual["minimo"],
+                "multiplicador": actual["multiplicador"],
+            }
+            if actual
+            else None
+        ),
+        "multiplicador": nivel["multiplicador"],
+        "consumo_mes": nivel["litros_mes"],
+        "consumo_mes_anterior": nivel["litros_mes_anterior"],
+        "siguiente_nivel": (
+            {"clave": siguiente["clave"], "nombre": siguiente["nombre"], "minimo": siguiente["minimo"]}
+            if siguiente
+            else None
+        ),
+        "faltan_para_subir": nivel["faltan_para_subir"],
+        "faltan_para_mantener": nivel["faltan_para_mantener"],
+        "niveles": catalogo.niveles(),
     }
 
 

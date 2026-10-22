@@ -4,13 +4,14 @@ export default function RecompensaCard({
   recompensa,
   puntos = 0,
   onCanjear,
+  canjeando = false,
   mostrarProgreso = true,
   sobreMenta = false,
 }) {
-  const { nombre, descripcion, imagen, costo_puntos, stock } = recompensa
+  const { nombre, descripcion, imagen, costo_puntos, codigos_disponibles } = recompensa
   const [urlFallida, setUrlFallida] = useState(null)
 
-  const agotado = stock <= 0
+  const agotado = (codigos_disponibles ?? 0) <= 0
   const alcanza = !agotado && puntos >= costo_puntos
   const avance = Math.min(puntos, costo_puntos)
   const pct = costo_puntos > 0 ? Math.round((avance / costo_puntos) * 100) : 0
@@ -70,10 +71,10 @@ export default function RecompensaCard({
               {onCanjear && (
                 <button
                   className="premio-canjear"
-                  disabled={!alcanza}
+                  disabled={!alcanza || canjeando}
                   onClick={() => onCanjear(recompensa)}
                 >
-                  {agotado ? 'Agotado' : 'Canjear'}
+                  {canjeando ? 'Canjeando...' : agotado ? 'Agotado' : 'Canjear'}
                 </button>
               )}
             </div>

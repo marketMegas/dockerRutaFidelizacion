@@ -39,11 +39,15 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://fidelizacion:fidelizacion@db:5432/fidelizacion}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CATALOGO_PATH: ${CATALOGO_PATH:-/app/data/catalogo.json}
+      TZ_ESTACION: ${TZ_ESTACION:-America/Bogota}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - datos_catalogo:/app/data
     ports:
       - "127.0.0.1:8002:8000"
     healthcheck:
@@ -88,4 +92,5 @@ services:
 volumes:
   datos_db:
   datos_redis:
+  datos_catalogo:
   datos_conector:

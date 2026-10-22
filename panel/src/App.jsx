@@ -4,14 +4,16 @@ import Login from './views/Login.jsx'
 import Dashboard from './views/Dashboard.jsx'
 import Clientes from './views/Clientes.jsx'
 import Reglas from './views/Reglas.jsx'
-import Recompensas from './views/Recompensas.jsx'
+import Niveles from './views/Niveles.jsx'
+import Catalogo from './views/Catalogo.jsx'
 import Reportes from './views/Reportes.jsx'
 
 const NAV = [
   { key: 'dashboard', label: 'Resumen', Comp: Dashboard },
   { key: 'clientes', label: 'Clientes', Comp: Clientes },
   { key: 'reglas', label: 'Reglas de puntos', Comp: Reglas },
-  { key: 'recompensas', label: 'Recompensas', Comp: Recompensas },
+  { key: 'niveles', label: 'Niveles', Comp: Niveles },
+  { key: 'catalogo', label: 'Catálogo', Comp: Catalogo },
   { key: 'reportes', label: 'Reportes', Comp: Reportes },
 ]
 

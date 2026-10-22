@@ -392,6 +392,86 @@ td button + button {
   min-width: 120px;
 }
 
+/* Edicion del pool de codigos: lista de texto, un codigo por linea. */
+
+.form-edicion .campo-codigos {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.contador-codigos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.area-codigos {
+  width: 100%;
+  min-height: 170px;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  resize: vertical;
+}
+
+.fila-codigos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+}
+
+.campo-generar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.campo-generar label {
+  width: 120px;
+}
+
+.sin-guardar {
+  font-size: 0.8rem;
+  color: var(--orange, #b45309);
+}
+
+.codigo-panel {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.nivel-celda {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.nivel-tag {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: #eef7ea;
+  color: var(--green-3);
+  border: 1px solid #cfe6c6;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;

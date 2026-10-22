@@ -97,6 +97,7 @@ export default function Clientes() {
             <th>Cédula</th>
             <th>Teléfono</th>
             <th>Nombre</th>
+            <th>Nivel</th>
             <th>Puntos</th>
             <th></th>
           </tr>
@@ -108,6 +109,16 @@ export default function Clientes() {
               <td data-label="Cédula">{c.cedula || '-'}</td>
               <td data-label="Teléfono">{c.telefono}</td>
               <td data-label="Nombre">{c.nombre || '-'}</td>
+              <td data-label="Nivel">
+                {c.nivel ? (
+                  <span className="nivel-celda">
+                    <span className="nivel-tag">{c.nivel.nombre}</span>
+                    <span className="muted">x{c.nivel.multiplicador.toFixed(2)}</span>
+                  </span>
+                ) : (
+                  '-'
+                )}
+              </td>
               <td data-label="Puntos">{c.puntos}</td>
               <td className="celda-acciones">
                 <button onClick={() => ver(c.id)}>Detalle</button>
@@ -124,6 +135,9 @@ export default function Clientes() {
               {detalle.cliente.nombre || detalle.cliente.telefono}
               {detalle.cliente.cedula ? ` - C.C. ${detalle.cliente.cedula}` : ''}
               {detalle.cliente.placa ? ` - ${detalle.cliente.placa}` : ''} - {detalle.cliente.puntos} pts
+              {detalle.cliente.nivel
+                ? ` - Nivel ${detalle.cliente.nivel.nombre} (x${detalle.cliente.nivel.multiplicador.toFixed(2)})`
+                : ''}
             </h3>
             <button onClick={() => setDetalle(null)}>Cerrar</button>
           </div>

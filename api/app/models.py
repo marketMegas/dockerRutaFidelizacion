@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -92,28 +92,15 @@ class Regla(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
 
 
-class Recompensa(Base):
-    __tablename__ = "recompensas"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    nombre: Mapped[str] = mapped_column(String(120), nullable=False)
-    descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
-    imagen: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    costo_puntos: Mapped[int] = mapped_column(Integer, nullable=False)
-    stock: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
-
-
 class Canje(Base):
     __tablename__ = "canjes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     cliente_id: Mapped[int] = mapped_column(ForeignKey("clientes.id"), index=True, nullable=False)
-    recompensa_id: Mapped[int] = mapped_column(ForeignKey("recompensas.id"), nullable=False)
+    premio_clave: Mapped[str] = mapped_column(String(60), nullable=False)
+    premio_nombre: Mapped[str] = mapped_column(String(120), nullable=False)
+    codigo: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     puntos_costo: Mapped[int] = mapped_column(Integer, nullable=False)
-    estado: Mapped[str] = mapped_column(String(20), default="pendiente", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
 
     cliente: Mapped["Cliente"] = relationship()
-    recompensa: Mapped["Recompensa"] = relationship()

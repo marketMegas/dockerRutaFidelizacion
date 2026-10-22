@@ -16,6 +16,11 @@ export default function Dashboard() {
     { t: 'Clientes', v: resumen.total_clientes, s: `${resumen.clientes_nuevos_mes} nuevos este mes` },
     { t: 'Puntos activos', v: resumen.puntos_activos, s: 'saldo en circulación' },
     { t: 'Puntos del mes', v: resumen.puntos_acumulados_mes, s: `${resumen.puntos_canjeados_mes} canjeados` },
+    {
+      t: 'Códigos entregados',
+      v: resumen.codigos_entregados,
+      s: `${resumen.codigos_disponibles} disponibles`,
+    },
     { t: 'Ventas hoy', v: resumen.ventas_hoy.cantidad, s: `${resumen.ventas_hoy.litros.toFixed(1)} L` },
     { t: 'Ventas del mes', v: resumen.ventas_mes.cantidad, s: `${resumen.ventas_mes.litros.toFixed(1)} L` },
   ]
@@ -29,6 +34,17 @@ export default function Dashboard() {
             <span className="card-t">{c.t}</span>
             <span className="card-v">{c.v}</span>
             <span className="card-s">{c.s}</span>
+          </div>
+        ))}
+      </div>
+
+      <h3>Clientes por nivel</h3>
+      <div className="grid">
+        {(resumen.niveles || []).map((n) => (
+          <div className="card" key={n.clave}>
+            <span className="card-t">{n.nombre}</span>
+            <span className="card-v">{n.clientes}</span>
+            <span className="card-s">clientes este mes</span>
           </div>
         ))}
       </div>

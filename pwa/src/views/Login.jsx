@@ -27,7 +27,7 @@ function formatearPlaca(valor) {
 }
 
 export default function Login({ onLogin }) {
-  const [recompensas, setRecompensas] = useState([])
+  const [premios, setPremios] = useState([])
   const [paso, setPaso] = useState('placa')
   const [placa, setPlaca] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -42,7 +42,9 @@ export default function Login({ onLogin }) {
   const [heroe, setHeroe] = useState(0)
 
   useEffect(() => {
-    api('/recompensas').then(setRecompensas).catch(() => {})
+    api('/catalogo')
+      .then((data) => setPremios(data.premios || []))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export default function Login({ onLogin }) {
             <span className="login-hero-label">Programa:</span>
             Fidelización puntos g-max
           </h1>
-          <p>Suma puntos por cada litro que cargas y canjéalos por recompensas.</p>
+          <p>Suma puntos por cada litro que cargas. Mientras más cargues, más puntos por litro.</p>
         </div>
 
         <div className="login-hero-carrusel">
@@ -213,7 +215,7 @@ export default function Login({ onLogin }) {
               required
             />
           </label>
-          <p className="muted">La cédula identifica tu cuenta al reclamar recompensas.</p>
+          <p className="muted">La cédula identifica tu cuenta en la estación.</p>
           <label>
             Tu nombre
             <input placeholder="Opcional" value={nombre} onChange={(e) => setNombre(e.target.value)} />
@@ -252,12 +254,12 @@ export default function Login({ onLogin }) {
         </form>
       )}
 
-      {recompensas.length > 0 && (
+      {premios.length > 0 && (
         <section className="login-premios">
           <h2>Recompensas</h2>
           <div className="premios">
-            {recompensas.map((r) => (
-              <RecompensaCard key={r.id} recompensa={r} mostrarProgreso={false} sobreMenta />
+            {premios.map((r) => (
+              <RecompensaCard key={r.clave} recompensa={r} mostrarProgreso={false} sobreMenta />
             ))}
           </div>
         </section>

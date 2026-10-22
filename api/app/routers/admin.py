@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,10 +7,18 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import require_admin
-from ..models import Canje, Cliente, LedgerPuntos, Recompensa, Regla, Vehiculo, Venta, utcnow
-from ..schemas import ClientePatchIn, RecompensaIn, ReglaIn, ReglaPatchIn, ReversoIn, VehiculoIn
+from ..models import Canje, Cliente, LedgerPuntos, Regla, Vehiculo, Venta, utcnow
+from ..schemas import (
+    CatalogoIn,
+    ClientePatchIn,
+    GenerarCodigosIn,
+    ReglaIn,
+    ReglaPatchIn,
+    ReversoIn,
+    VehiculoIn,
+)
 from ..security import cedula_valida, normalizar_cedula, normalizar_placa, placa_valida
-from ..services import ledger
+from ..services import catalogo, ledger, niveles, periodo
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
@@ -19,9 +28,9 @@ CEDULA_MSG = "Cedula invalida: ingresa solo numeros (6 a 10)"
 
 @router.get("/resumen")
 def resumen(db: Session = Depends(get_db)):
-    ahora = utcnow()
-    inicio_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    inicio_dia = ahora.replace(hour=0, minute=0, second=0, microsecond=0)
+    inicio_mes = periodo.inicio_mes_utc()
+    inicio_mes_anterior = periodo.inicio_mes_anterior_utc()
+    inicio_dia = periodo.inicio_dia_utc()
 
     total_clientes = db.scalar(select(func.count(Cliente.id))) or 0
     clientes_nuevos_mes = db.scalar(select(func.count(Cliente.id)).where(Cliente.created_at >= inicio_mes)) or 0
@@ -54,6 +63,10 @@ def resumen(db: Session = Depends(get_db)):
         ).where(Venta.created_at >= inicio_mes)
     ).one()
 
+    reparto = _reparto_por_nivel(db, inicio_mes, inicio_mes_anterior)
+    disponibles = catalogo.conteo_disponibles(db)
+    codigos_entregados = db.scalar(select(func.count(Canje.id))) or 0
+
     return {
         "total_clientes": total_clientes,
         "clientes_nuevos_mes": clientes_nuevos_mes,
@@ -62,6 +75,60 @@ def resumen(db: Session = Depends(get_db)):
         "puntos_canjeados_mes": abs(int(canje_mes)),
         "ventas_hoy": {"cantidad": ventas_hoy[0], "litros": float(ventas_hoy[1]), "monto": float(ventas_hoy[2])},
         "ventas_mes": {"cantidad": ventas_mes[0], "litros": float(ventas_mes[1]), "monto": float(ventas_mes[2])},
+        "niveles": reparto,
+        "codigos_entregados": int(codigos_entregados),
+        "codigos_disponibles": int(sum(disponibles.values())),
+    }
+
+
+def _reparto_por_nivel(db: Session, inicio_mes: datetime, inicio_mes_anterior: datetime) -> list[dict]:
+    """Cuantos clientes hay en cada nivel segun el consumo del mes."""
+    escala = catalogo.niveles()
+    if not escala:
+        return []
+    consumos_actuales = niveles.consumos_por_cliente(db, inicio_mes)
+    consumos_anteriores = niveles.consumos_por_cliente(db, inicio_mes_anterior, hasta=inicio_mes)
+    ids = db.scalars(select(Cliente.id).where(Cliente.activo.is_(True))).all()
+    reparto = [{"clave": n["clave"], "nombre": n["nombre"], "clientes": 0} for n in escala]
+    indice = {n["clave"]: posicion for posicion, n in enumerate(escala)}
+    for cliente_id in ids:
+        info = niveles.calcular_nivel(
+            float(consumos_anteriores.get(cliente_id, 0.0)),
+            float(consumos_actuales.get(cliente_id, 0.0)),
+            escala,
+        )
+        if info["nivel"]:
+            reparto[indice[info["nivel"]["clave"]]]["clientes"] += 1
+    return reparto
+
+
+def _nivel_publico(info: dict) -> dict | None:
+    """Nivel efectivo en formato corto para las tablas del panel."""
+    nivel = info.get("nivel")
+    if nivel is None:
+        return None
+    return {
+        "clave": nivel["clave"],
+        "nombre": nivel["nombre"],
+        "minimo": float(nivel["minimo"]),
+        "multiplicador": float(info["multiplicador"]),
+    }
+
+
+def _niveles_por_cliente(db: Session, clientes: list[Cliente]) -> dict[int, dict]:
+    """Calcula en dos consultas el nivel de todos los clientes listados."""
+    escala = catalogo.niveles()
+    inicio_mes = periodo.inicio_mes_utc()
+    inicio_anterior = periodo.inicio_mes_anterior_utc()
+    actuales = niveles.consumos_por_cliente(db, inicio_mes)
+    anteriores = niveles.consumos_por_cliente(db, inicio_anterior, hasta=inicio_mes)
+    return {
+        c.id: niveles.calcular_nivel(
+            float(anteriores.get(c.id, 0.0)),
+            float(actuales.get(c.id, 0.0)),
+            escala,
+        )
+        for c in clientes
     }
 
 
@@ -115,6 +182,7 @@ def listar_clientes(q: str | None = None, limite: int = 50, offset: int = 0, db:
             .order_by(Vehiculo.id)
         ).all():
             por_cliente.setdefault(v.cliente_id, []).append(v.placa)
+    info_niveles = _niveles_por_cliente(db, clientes)
     return {
         "total": total,
         "clientes": [
@@ -126,6 +194,8 @@ def listar_clientes(q: str | None = None, limite: int = 50, offset: int = 0, db:
                 "placa": c.placa,
                 "placas": por_cliente.get(c.id, []),
                 "puntos": c.puntos,
+                "nivel": _nivel_publico(info_niveles[c.id]),
+                "consumo_mes": info_niveles[c.id]["litros_mes"],
                 "activo": c.activo,
                 "created_at": c.created_at,
             }
@@ -150,6 +220,7 @@ def detalle_cliente(cliente_id: int, db: Session = Depends(get_db)):
         .where(Vehiculo.cliente_id == cliente_id, Vehiculo.activo.is_(True))
         .order_by(Vehiculo.id)
     ).all()
+    info_nivel = niveles.nivel_efectivo(db, cliente_id)
     return {
         "cliente": {
             "id": cliente.id,
@@ -159,6 +230,8 @@ def detalle_cliente(cliente_id: int, db: Session = Depends(get_db)):
             "placa": cliente.placa,
             "placas": [{"id": v.id, "placa": v.placa, "created_at": v.created_at} for v in vehiculos],
             "puntos": cliente.puntos,
+            "nivel": _nivel_publico(info_nivel),
+            "consumo_mes": info_nivel["litros_mes"],
         },
         "movimientos": [
             {
@@ -274,6 +347,7 @@ def reversar(mov_id: int, body: ReversoIn, db: Session = Depends(get_db)):
 
 @router.get("/canjes")
 def listar_canjes(q: str | None = None, limite: int = 50, db: Session = Depends(get_db)):
+    """Bitacora de codigos entregados (solo lectura)."""
     consulta = select(Canje).order_by(Canje.id.desc())
     if q:
         consulta = consulta.join(Cliente, Canje.cliente_id == Cliente.id).where(Cliente.cedula.ilike(f"%{q}%"))
@@ -285,23 +359,14 @@ def listar_canjes(q: str | None = None, limite: int = 50, db: Session = Depends(
             "cliente": c.cliente.nombre if c.cliente else None,
             "cedula": c.cliente.cedula if c.cliente else None,
             "placa": c.cliente.placa if c.cliente else None,
-            "recompensa": c.recompensa.nombre if c.recompensa else None,
+            "premio": c.premio_nombre,
+            "premio_clave": c.premio_clave,
+            "codigo": c.codigo,
             "puntos_costo": c.puntos_costo,
-            "estado": c.estado,
             "created_at": c.created_at,
         }
         for c in canjes
     ]
-
-
-@router.post("/canjes/{canje_id}/entregado")
-def marcar_entregado(canje_id: int, db: Session = Depends(get_db)):
-    canje = db.get(Canje, canje_id)
-    if canje is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Canje no encontrado")
-    canje.estado = "entregado"
-    db.commit()
-    return {"canje_id": canje.id, "estado": canje.estado}
 
 
 @router.get("/reglas")
@@ -372,38 +437,71 @@ def actualizar_regla(regla_id: int, body: ReglaPatchIn, db: Session = Depends(ge
     return {"id": regla.id, "nombre": regla.nombre, "activa": regla.activa}
 
 
-@router.get("/recompensas")
-def listar_recompensas_admin(db: Session = Depends(get_db)):
-    recompensas = db.scalars(select(Recompensa).order_by(Recompensa.id.desc())).all()
-    return [
-        {
-            "id": r.id,
-            "nombre": r.nombre,
-            "descripcion": r.descripcion,
-            "imagen": r.imagen,
-            "costo_puntos": r.costo_puntos,
-            "stock": r.stock,
-            "activa": r.activa,
-        }
-        for r in recompensas
-    ]
+@router.get("/catalogo")
+def leer_catalogo(db: Session = Depends(get_db)):
+    """Catalogo completo (niveles y premios) tal como esta en el archivo."""
+    datos = catalogo.leer()
+    conteo = catalogo.conteo_disponibles(db, datos["premios"])
+    return {
+        "version": datos["version"],
+        "niveles": datos["niveles"],
+        "premios": [
+            {
+                **premio,
+                "codigos_disponibles": conteo.get(premio["clave"], 0),
+                "codigos_entregados": len(premio["codigos"]) - conteo.get(premio["clave"], 0),
+            }
+            for premio in datos["premios"]
+        ],
+    }
 
 
-@router.post("/recompensas", status_code=status.HTTP_201_CREATED)
-def crear_recompensa(body: RecompensaIn, db: Session = Depends(get_db)):
-    recompensa = Recompensa(**body.model_dump())
-    db.add(recompensa)
-    db.commit()
-    db.refresh(recompensa)
-    return {"id": recompensa.id, "nombre": recompensa.nombre}
+@router.put("/catalogo")
+def guardar_catalogo(body: CatalogoIn, db: Session = Depends(get_db)):
+    try:
+        guardado = catalogo.guardar(
+            body.model_dump(),
+            version_esperada=body.version if body.version > 0 else None,
+        )
+    except catalogo.ConflictoCatalogo as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except catalogo.CatalogoInvalido as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    return {
+        "ok": True,
+        "version": guardado["version"],
+        "niveles": guardado["niveles"],
+        "premios": guardado["premios"],
+    }
 
 
-@router.put("/recompensas/{recompensa_id}")
-def actualizar_recompensa(recompensa_id: int, body: RecompensaIn, db: Session = Depends(get_db)):
-    recompensa = db.get(Recompensa, recompensa_id)
-    if recompensa is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Recompensa no encontrada")
-    for campo, valor in body.model_dump().items():
-        setattr(recompensa, campo, valor)
-    db.commit()
-    return {"id": recompensa.id, "nombre": recompensa.nombre, "activa": recompensa.activa}
+@router.post("/catalogo/{clave}/codigos", status_code=status.HTTP_201_CREATED)
+def generar_codigos_premio(clave: str, body: GenerarCodigosIn):
+    """Agrega codigos nuevos al pool de un premio y guarda el catalogo."""
+    datos = copy.deepcopy(catalogo.leer())
+    premio = next((p for p in datos["premios"] if p["clave"] == clave.strip().lower()), None)
+    if premio is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Premio no encontrado")
+
+    margen = catalogo.MAX_CODIGOS_POR_PREMIOS - len(premio["codigos"])
+    if body.cantidad > margen:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"Solo caben {max(margen, 0)} codigos mas en este premio",
+        )
+
+    existentes = {codigo for p in datos["premios"] for codigo in p["codigos"]}
+    nuevos = catalogo.generar_codigos(body.cantidad, existentes)
+    premio["codigos"].extend(nuevos)
+    try:
+        guardado = catalogo.guardar(datos, version_esperada=datos["version"])
+    except catalogo.ConflictoCatalogo as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except catalogo.CatalogoInvalido as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    return {
+        "ok": True,
+        "version": guardado["version"],
+        "premio": premio["clave"],
+        "codigos": nuevos,
+    }

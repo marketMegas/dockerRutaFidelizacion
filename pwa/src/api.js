@@ -41,3 +41,47 @@ export function fmtFecha(iso) {
   const d = new Date(iso.endsWith('Z') || iso.includes('+') ? iso : `${iso}Z`)
   return d.toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
 }
+
+export function fmtLitros(valor) {
+  const n = Number(valor) || 0
+  return n.toLocaleString('es-CO', { maximumFractionDigits: 1 })
+}
+
+export function fmtPuntos(valor) {
+  return (Number(valor) || 0).toLocaleString('es-CO')
+}
+
+export async function copiarTexto(texto) {
+  try {
+    await navigator.clipboard.writeText(texto)
+    return true
+  } catch {
+    // En http fuera de localhost no hay Clipboard API: se copia con un textarea.
+    try {
+      const area = document.createElement('textarea')
+      area.value = texto
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(area)
+      return ok
+    } catch {
+      return false
+    }
+  }
+}
+
+export async function compartir({ titulo, texto }) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: titulo, text: texto })
+      return 'compartido'
+    } catch (e) {
+      if (e.name === 'AbortError') return 'cancelado'
+    }
+  }
+  return (await copiarTexto(texto)) ? 'copiado' : 'fallo'
+}
