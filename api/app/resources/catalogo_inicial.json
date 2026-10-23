@@ -4,23 +4,23 @@
     {
       "clave": "arranque",
       "nombre": "Arranque",
-      "minimo": 0,
+      "minimo": 1,
       "multiplicador": 1.0,
-      "descripcion": "Nivel inicial: 1 punto por litro."
+      "descripcion": "De 1 a 99 litros en el mes: 1 punto por litro."
     },
     {
       "clave": "plata",
       "nombre": "Plata",
-      "minimo": 99,
+      "minimo": 100,
       "multiplicador": 1.25,
-      "descripcion": "Desde 99 litros en el mes: 1.25 puntos por litro."
+      "descripcion": "De 100 a 249 litros en el mes: 1.25 puntos por litro."
     },
     {
       "clave": "oro",
       "nombre": "Oro",
       "minimo": 250,
       "multiplicador": 1.5,
-      "descripcion": "Desde 250 litros en el mes: 1.5 puntos por litro."
+      "descripcion": "De 250 a 499 litros en el mes: 1.5 puntos por litro."
     },
     {
       "clave": "diamante",

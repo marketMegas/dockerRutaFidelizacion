@@ -22,15 +22,53 @@ preparar_env() {
   fi
 }
 
+cargar_env() {
+  if [ -f "$ENV_FILE" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    . <(tr -d '\r' < "$ENV_FILE")
+    set +a
+  fi
+}
+
+validar_env() {
+  local faltantes=()
+  local var
+  for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL REDIS_URL SECRET_KEY ESTACION_ID; do
+    if [ -z "${!var:-}" ]; then
+      faltantes+=("$var")
+    fi
+  done
+  if [ ${#faltantes[@]} -gt 0 ]; then
+    echo ">> ERROR: faltan variables en .env: ${faltantes[*]}" >&2
+    exit 1
+  fi
+
+  local inseguras=()
+  [ "${SECRET_KEY:-}" = "secretkeyReemplazarEnProduccion" ] && inseguras+=("SECRET_KEY")
+  [ "${POSTGRES_PASSWORD:-}" = "fidelizacion" ] && inseguras+=("POSTGRES_PASSWORD")
+  [ "${ADMIN_PASSWORD:-}" = "admin123" ] && inseguras+=("ADMIN_PASSWORD")
+  [ "${SYNC_API_KEY:-}" = "dev-api-key" ] && inseguras+=("SYNC_API_KEY")
+  [ "${CORS_ORIGINS:-}" = "*" ] && inseguras+=("CORS_ORIGINS")
+  [ "${DEBUG:-False}" = "True" ] && inseguras+=("DEBUG")
+  if [ ${#inseguras[@]} -gt 0 ]; then
+    echo ">> ERROR: cambia estos valores de plantilla en .env antes de desplegar: ${inseguras[*]}" >&2
+    exit 1
+  fi
+}
+
+cargar_env
+
 case "$ACCION" in
   up)
     preparar_env
+    cargar_env
+    validar_env
     echo ">> Construyendo y levantando contenedores..."
-    docker compose -f "$COMPOSE_FILE" up -d --build
+    docker compose -f "$COMPOSE_FILE" up -d --build --wait --wait-timeout 240
     echo
     docker compose -f "$COMPOSE_FILE" ps
     echo
-    sleep 3
     if curl -fsS http://127.0.0.1:8002/health; then
       echo
       echo ">> API operativa en http://127.0.0.1:8002"
@@ -43,8 +81,13 @@ case "$ACCION" in
     ;;
   update)
     git pull --ff-only || echo ">> Sin repositorio git; continuando con el codigo local."
-    docker compose -f "$COMPOSE_FILE" up -d --build
+    cargar_env
+    validar_env
+    docker compose -f "$COMPOSE_FILE" up -d --build --wait --wait-timeout 240
     docker compose -f "$COMPOSE_FILE" ps
+    ;;
+  niveles)
+    docker compose -f "$COMPOSE_FILE" exec -T api python -m scripts.actualizar_niveles
     ;;
   logs)
     docker compose -f "$COMPOSE_FILE" logs -f "${2:-}"
@@ -62,7 +105,7 @@ case "$ACCION" in
     fi
     ;;
   *)
-    echo "Uso: deploy.sh [up|down|update|logs|backup]"
+    echo "Uso: deploy.sh [up|down|update|niveles|logs|backup]"
     exit 1
     ;;
 esac

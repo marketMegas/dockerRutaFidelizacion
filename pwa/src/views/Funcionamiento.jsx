@@ -17,7 +17,7 @@ const PASOS = [
   {
     n: 4,
     t: 'Canjea y recibe tu código',
-    d: 'Cuando tengas puntos suficientes, canjea en Recompensas y recibirás un código de 8 caracteres. Guárdalo o envíalo por WhatsApp: con ese código reclamas tu premio en la estación.',
+    d: 'Cuando tengas puntos suficientes, canjea en Recompensas y recibirás un código de 8 caracteres. Guárdalo o envíalo por WhatsApp: con ese código reclamas tu premio en los comercios aliados.',
   },
 ]
 

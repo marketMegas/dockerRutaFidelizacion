@@ -34,7 +34,7 @@ export default function CodigoCaja({ codigo, premio, nuevo = false }) {
           Compartir
         </button>
       </div>
-      <p className="codigo-hint">Muéstralo en la estación o envíalo por WhatsApp.</p>
+      <p className="codigo-hint">Muéstralo en los comercios aliados o envíalo por WhatsApp.</p>
       <p className="codigo-aviso" role="status">
         {aviso}
       </p>

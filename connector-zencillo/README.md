@@ -1,7 +1,8 @@
 # Conector Zencillo
 
 Trae las ventas de combustible desde Zencillo (o desde un simulador) hacia la API de
-fidelizacion y acumula puntos por cada cliente identificado con su telefono.
+fidelizacion y acumula puntos por la **placa** del vehiculo. La API identifica al cliente dueno
+de la placa; el telefono es opcional y solo sirve para asociar una placa nueva.
 
 El conector es tolerante a fallos: si la API de fidelizacion no responde, la venta se guarda
 en una cola offline (`cola_offline.json`) y se reenvia automaticamente cuando vuelve la
@@ -22,6 +23,7 @@ pip install -r requirements.txt
 copy .env.example .env
 
 python conector.py menu
+python conector.py simular --litros 12.5 --placa ABC123
 python conector.py simular --litros 12.5 --placa ABC123 --telefono 3001234567
 python conector.py cola
 python conector.py sincronizar

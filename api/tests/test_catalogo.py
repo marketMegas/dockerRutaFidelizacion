@@ -11,7 +11,7 @@ def _catalogo_valido() -> dict:
         "version": 1,
         "niveles": [
             {"clave": "arranque", "nombre": "Arranque", "minimo": 0, "multiplicador": 1.0},
-            {"clave": "plata", "nombre": "Plata", "minimo": 99, "multiplicador": 1.25},
+            {"clave": "plata", "nombre": "Plata", "minimo": 100, "multiplicador": 1.25},
         ],
         "premios": [
             {
@@ -32,6 +32,7 @@ def test_el_archivo_se_crea_desde_la_plantilla():
     datos = catalogo.leer()
     assert len(datos["niveles"]) == 4
     assert [n["clave"] for n in datos["niveles"]] == ["arranque", "plata", "oro", "diamante"]
+    assert [n["minimo"] for n in datos["niveles"]] == [1, 100, 250, 500]
     assert datos["premios"][0]["clave"] == "cafe"
     assert len(datos["premios"][0]["codigos"]) == 100
 
@@ -100,14 +101,14 @@ def test_admin_actualiza_el_catalogo(client, admin_headers):
         "niveles": actual.json()["niveles"],
         "premios": actual.json()["premios"],
     }
-    cuerpo["niveles"][1]["minimo"] = 100
+    cuerpo["niveles"][1]["minimo"] = 120
 
     resp = client.put(f"{PREFIX}/admin/catalogo", json=cuerpo, headers=admin_headers)
     assert resp.status_code == 200, resp.text
     assert resp.json()["version"] == 2
 
     nuevo = client.get(f"{PREFIX}/admin/catalogo", headers=admin_headers).json()
-    assert nuevo["niveles"][1]["minimo"] == 100
+    assert nuevo["niveles"][1]["minimo"] == 120
 
 
 def test_admin_choca_con_una_version_desactualizada(client, admin_headers):

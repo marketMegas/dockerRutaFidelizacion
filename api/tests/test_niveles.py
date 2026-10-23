@@ -4,8 +4,8 @@ from app.models import Cliente, Venta
 from app.services import niveles, periodo
 
 ESCALA = [
-    {"clave": "arranque", "nombre": "Arranque", "minimo": 0, "multiplicador": 1.0},
-    {"clave": "plata", "nombre": "Plata", "minimo": 99, "multiplicador": 1.25},
+    {"clave": "arranque", "nombre": "Arranque", "minimo": 1, "multiplicador": 1.0},
+    {"clave": "plata", "nombre": "Plata", "minimo": 100, "multiplicador": 1.25},
     {"clave": "oro", "nombre": "Oro", "minimo": 250, "multiplicador": 1.5},
     {"clave": "diamante", "nombre": "Diamante", "minimo": 500, "multiplicador": 2.0},
 ]
@@ -43,8 +43,10 @@ def _venta_mes_anterior(db, cliente: Cliente, litros: float) -> Venta:
 
 def test_nivel_por_litros():
     assert niveles.nivel_por_litros(0, ESCALA)["nivel"]["clave"] == "arranque"
-    assert niveles.nivel_por_litros(98.9, ESCALA)["nivel"]["clave"] == "arranque"
-    assert niveles.nivel_por_litros(99, ESCALA)["nivel"]["clave"] == "plata"
+    assert niveles.nivel_por_litros(1, ESCALA)["nivel"]["clave"] == "arranque"
+    assert niveles.nivel_por_litros(99, ESCALA)["nivel"]["clave"] == "arranque"
+    assert niveles.nivel_por_litros(99.9, ESCALA)["nivel"]["clave"] == "arranque"
+    assert niveles.nivel_por_litros(100, ESCALA)["nivel"]["clave"] == "plata"
     assert niveles.nivel_por_litros(249.9, ESCALA)["nivel"]["clave"] == "plata"
     assert niveles.nivel_por_litros(250, ESCALA)["nivel"]["clave"] == "oro"
     assert niveles.nivel_por_litros(499.9, ESCALA)["nivel"]["clave"] == "oro"
@@ -54,7 +56,8 @@ def test_nivel_por_litros():
 
 def test_siguiente_nivel():
     assert niveles.nivel_por_litros(0, ESCALA)["siguiente"]["clave"] == "plata"
-    assert niveles.nivel_por_litros(99, ESCALA)["siguiente"]["clave"] == "oro"
+    assert niveles.nivel_por_litros(99, ESCALA)["siguiente"]["clave"] == "plata"
+    assert niveles.nivel_por_litros(100, ESCALA)["siguiente"]["clave"] == "oro"
     assert niveles.nivel_por_litros(250, ESCALA)["siguiente"]["clave"] == "diamante"
     assert niveles.nivel_por_litros(500, ESCALA)["siguiente"] is None
 
@@ -77,7 +80,7 @@ def test_faltan_para_mantener_y_subir():
     # Venia de Plata (120 L el mes pasado) y este mes va en 10 L.
     info = niveles.calcular_nivel(120, 10, ESCALA)
     assert info["nivel"]["clave"] == "plata"
-    assert info["faltan_para_mantener"] == 89
+    assert info["faltan_para_mantener"] == 90
     assert info["faltan_para_subir"] == 240
 
 

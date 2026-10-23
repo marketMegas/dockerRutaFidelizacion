@@ -18,14 +18,30 @@ def _verificar_api_key(x_api_key: str) -> None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "API key invalida")
 
 
-def _resolver_cliente(db: Session, body: VentaSync) -> Cliente:
-    if not body.telefono:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Se requiere telefono")
+def _resolver_cliente(db: Session, body: VentaSync) -> tuple[Cliente, str]:
+    placa = normalizar_placa(body.placa)
+    if not placa_valida(placa):
+        placa = ""
 
-    cliente = db.scalar(select(Cliente).where(Cliente.telefono == body.telefono))
-    if cliente is None or not cliente.activo:
+    # Produccion identifica la venta por placa: el vehiculo ya registrado
+    # define el cliente dueno, aunque la venta traiga otro telefono.
+    if placa:
+        vehiculo = db.scalar(select(Vehiculo).where(Vehiculo.placa == placa))
+        if vehiculo is not None:
+            cliente = db.get(Cliente, vehiculo.cliente_id)
+            if cliente is not None and cliente.activo:
+                return cliente, placa
+
+    if body.telefono:
+        cliente = db.scalar(select(Cliente).where(Cliente.telefono == body.telefono))
+        if cliente is not None and cliente.activo:
+            return cliente, placa
+
+    if placa:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Placa no registrada")
+    if body.telefono:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Telefono no registrado")
-    return cliente
+    raise HTTPException(status.HTTP_400_BAD_REQUEST, "Se requiere placa o telefono")
 
 
 @router.post("/venta")
@@ -46,10 +62,7 @@ def sincronizar_venta(
             "saldo": cliente.puntos if cliente else None,
         }
 
-    cliente = _resolver_cliente(db, body)
-    placa = normalizar_placa(body.placa)
-    if not placa_valida(placa):
-        placa = ""
+    cliente, placa = _resolver_cliente(db, body)
     if placa:
         vehiculo = db.scalar(select(Vehiculo).where(Vehiculo.placa == placa))
         if vehiculo is None:

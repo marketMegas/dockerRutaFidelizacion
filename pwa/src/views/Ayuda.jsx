@@ -17,7 +17,7 @@ const PREGUNTAS = [
   },
   {
     q: 'Cómo canjeo una recompensa?',
-    a: 'En Recompensas elige un premio que alcance con tus puntos y toca Canjear. Recibirás un código al instante: guárdalo o envíalo por WhatsApp y muéstralo en la estación.',
+    a: 'En Recompensas elige un premio que alcance con tus puntos y toca Canjear. Recibirás un código al instante: guárdalo o envíalo por WhatsApp y muéstralo en los comercios aliados.',
   },
   {
     q: 'Dónde veo mi código?',

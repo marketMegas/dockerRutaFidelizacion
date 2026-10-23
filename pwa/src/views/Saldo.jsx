@@ -13,7 +13,7 @@ export default function Saldo({ cliente, refrescar }) {
 
       <p className="muted">
         Cada litro que cargas suma puntos y tu nivel del mes los multiplica. Canjea en
-        Recompensas y recibe un código para reclamar tu premio en la estación.
+        Recompensas y recibe un código para reclamar tu premio en los comercios aliados.
       </p>
 
       <button className="primario" onClick={refrescar}>

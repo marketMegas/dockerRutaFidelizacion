@@ -45,14 +45,14 @@ def test_sync_requiere_api_key(client):
     assert resp.status_code == 401
 
 
-def test_sync_requiere_telefono(client):
+def test_sync_requiere_placa_o_telefono(client):
     resp = client.post(
         f"{PREFIX}/sync/venta",
         json={"id_externo": "F-NOTEL", "volumen_litros": 5, "monto": 10000},
         headers={"X-API-Key": "test-key"},
     )
     assert resp.status_code == 400
-    assert "telefono" in resp.json()["detail"]
+    assert "placa o telefono" in resp.json()["detail"]
 
 
 def test_endpoint_qr_no_existe(client):
@@ -296,15 +296,41 @@ def test_sync_asocia_placa_nueva(client, admin_headers):
     assert lista.json()["clientes"][0]["placas"] == ["TST109", "TST110"]
 
 
-def test_sync_no_roba_placa_de_otra_cuenta(client, admin_headers):
+def test_sync_acredita_al_dueno_de_la_placa(client):
     a = login_cliente(client, "TST111", "3003334455", "A")
     b = login_cliente(client, "TST112", "3003334466", "B")
-    enviar_venta(client, "F-ROBA-1", 10.0, 20000, telefono="3003334466", placa="TST111")
+    venta = enviar_venta(client, "F-ROBA-1", 10.0, 20000, telefono="3003334466", placa="TST111")
+    assert venta.status_code == 200, venta.text
 
     perfil_a = client.get(f"{PREFIX}/clientes/me", headers=a)
     perfil_b = client.get(f"{PREFIX}/clientes/me", headers=b)
+    assert perfil_a.json()["puntos"] == 10
+    assert perfil_b.json()["puntos"] == 0
     assert perfil_a.json()["placas"] == ["TST111"]
     assert perfil_b.json()["placas"] == ["TST112"]
+
+
+def test_sync_por_placa_sin_telefono(client):
+    headers = login_cliente(client, "TST120", "3004445566", "Placa")
+    venta = enviar_venta(client, "F-SOLOPLACA-1", 30.0, 60000, placa="tst-120")
+    assert venta.status_code == 200, venta.text
+    assert venta.json()["puntos_otorgados"] == 30
+
+    perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
+    assert perfil.json()["puntos"] == 30
+    assert perfil.json()["placas"] == ["TST120"]
+
+    # una segunda carga por la misma placa sigue acumulando litros/puntos
+    otra = enviar_venta(client, "F-SOLOPLACA-2", 15.0, 30000, placa="TST120")
+    assert otra.status_code == 200, otra.text
+    perfil = client.get(f"{PREFIX}/clientes/me", headers=headers)
+    assert perfil.json()["puntos"] == 45
+
+
+def test_sync_placa_no_registrada(client):
+    resp = enviar_venta(client, "F-PLACA-DESCONOCIDA", 10.0, 20000, placa="ZZZ999")
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Placa no registrada"
 
 
 def test_admin_agrega_y_quita_placa(client, admin_headers):

@@ -3,7 +3,7 @@
 Programa de puntos para una estacion de GLP (autogas): los clientes acumulan puntos por cada
 litro que cargan, se identifican con la placa de su vehiculo y suben de nivel segun su consumo
 mensual. Cada nivel multiplica los puntos que suman sus litros. Los premios se canjean desde la
-PWA y el cliente recibe un **codigo de 8 caracteres** que presenta en la estacion.
+PWA y el cliente recibe un **codigo de 8 caracteres** que presenta en los comercios aliados.
 La administracion gestiona reglas, niveles, catalogo de premios, clientes y reportes.
 
 Pensado para desplegarse en el VPS Hostinger (AlmaLinux 9 + CyberPanel/OpenLiteSpeed) junto a
@@ -22,11 +22,12 @@ integracion con Zencillo.
 | `db`                  | PostgreSQL 17                                                | postgres:17-alpine          | 127.0.0.1:5433 |
 | `redis`               | Cache / support                                              | redis:7-alpine              | interno       |
 
-Flujo de puntos: el conector envia una venta a `POST /fid-api/sync/venta` con el telefono del
-cliente y la placa del vehiculo (la ultima placa queda guardada en el cliente); la API
-calcula los puntos con la regla vigente y con el **multiplicador del nivel** del cliente, y
-registra un movimiento inmutable en el ledger. El panel y la PWA leen saldos y movimientos
-desde la misma API.
+Flujo de puntos: el conector envia una venta a `POST /fid-api/sync/venta` con la **placa** del
+vehiculo (el telefono es opcional). La API resuelve el cliente dueno de la placa registrada y
+acumula los litros a esa cuenta; si la placa no existe, usa el telefono como respaldo para
+asociar una placa nueva. La ultima placa usada queda guardada en el cliente. Luego calcula los
+puntos con la regla vigente y con el **multiplicador del nivel** del cliente, y registra un
+movimiento inmutable en el ledger. El panel y la PWA leen saldos y movimientos desde la misma API.
 
 El ledger nunca borra movimientos: los canjes y reversos se anotan como movimientos nuevos. Un
 reverso que dejaria el saldo en negativo se rechaza.
@@ -37,9 +38,10 @@ reverso que dejaria el saldo en negativo se rechaza.
   los litros del **mes anterior** y el del **mes en curso**: al empezar el mes se conserva el
   nivel ganado y se pierde si no se vuelve a alcanzar. El corte usa el calendario local de
   `TZ_ESTACION` (por defecto `America/Bogota`). Los umbrales y multiplicadores por defecto son
-  Arranque 0 L x1.00, Plata 99 L x1.25, Oro 250 L x1.50 y Diamante 500 L x2.00 (de 500 en
-  adelante es Diamante), y se editan en
-  el panel (**Niveles**).
+  Arranque 1-99 L x1.00, Plata 100-249 L x1.25, Oro 250-499 L x1.50 y Diamante 500 L o más
+  x2.00, y se editan en
+  el panel (**Niveles**). En una instalacion que ya tiene catalogo, aplica estos umbrales
+  sin tocar premios ni codigos con `./deploy/deploy.sh niveles`.
 - **Catalogo en archivo.** Los niveles y premios viven en un JSON (`CATALOGO_PATH`, por
   defecto `/app/data/catalogo.json`) dentro del volumen Docker `datos_catalogo`; no hay tabla
   de recompensas. La plantilla viaja en `api/app/resources/catalogo_inicial.json` y se copia
@@ -48,7 +50,7 @@ reverso que dejaria el saldo en negativo se rechaza.
 - **Codigos redimibles.** El pool de codigos de cada premio se guarda en el mismo JSON. La
   disponibilidad es `codigos del archivo - codigos ya asignados en canjes`. Al canjear, la API
   reserva un codigo de forma atomica (lock del cliente + `unique` en `canjes.codigo`) y lo
-  entrega al cliente; el premio se reclama en la estacion presentando ese codigo. No hay QR,
+  entrega al cliente; el premio se reclama en los comercios aliados presentando ese codigo. No hay QR,
   estado de entrega ni verificacion en linea. Un reverso del movimiento de canje **repone el
   codigo** al pool.
 - **Inventario fijo, sin generacion.** Los codigos se cargan desde una lista existente y se
@@ -144,6 +146,7 @@ Prefijo `API_PREFIX=/fid-api`.
 - `GET  /fid-api/clientes/me`, `/me/movimientos` — datos del cliente autenticado (`placas`, `cedula`).
 - `PATCH /fid-api/clientes/me` — el cliente agrega/actualiza su cedula (duplicada = 409).
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.
+  Resuelve por `placa`; `telefono` solo se usa como respaldo para placas nuevas.
 - `GET  /fid-api/catalogo` — publico; premios activos con su costo y `codigos_disponibles` (no expone los codigos).
 - `POST /fid-api/canjes` `{premio_clave}` — canje autenticado; devuelve `canje_id`, `codigo`, `premio`,
   `puntos_costo`, `saldo` y `nivel`. `GET /fid-api/canjes/mis` — codigos del cliente.
