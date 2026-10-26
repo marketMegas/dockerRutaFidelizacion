@@ -9,6 +9,9 @@
   --linea: #d8e0f2;
   --menta: #3af3b0;
   --lima: #5bf300;
+  /* Amarillo de la pastilla de placa: 9.56:1 con --placa-tinta, igual que el
+     menta que reemplazo (9.53:1). No esta en public/paleta.txt. */
+  --amarillo: #ffd400;
   --azul-hondo: #082770;
   --placa: #3af3b0;
   --placa-tinta: #082770;
@@ -345,7 +348,7 @@ h2::after {
   font-weight: 700;
   font-size: 0.78rem;
   letter-spacing: 0.12em;
-  background: var(--placa);
+  background: var(--amarillo);
   color: var(--placa-tinta);
   border-radius: 5px;
   min-width: 4.9rem;
@@ -589,7 +592,7 @@ h2::after {
 
 .saldo {
   position: relative;
-  background: linear-gradient(158deg, #eefcf7 0%, #d6f9ec 55%, #b5f2df 100%);
+  background: var(--lima);
   color: var(--azul-hondo);
   width: 100%;
   min-height: 176px;
@@ -602,7 +605,7 @@ h2::after {
   gap: 0.35rem;
   text-align: center;
   overflow: hidden;
-  border: 1px solid #b9f0dc;
+  border: 0;
   box-shadow: var(--sombra-card);
 }
 
@@ -636,17 +639,22 @@ h2::after {
 .saldo-img-wrap {
   flex: 1 1 58%;
   min-width: 0;
+  /* La foto del inicio mide 6000x3375: con esta proporcion el marco es la foto
+   misma, no un recuadro fijo que la recorta. Cambiar si se pone otra foto.
+   El aro blanco va con box-shadow, no con border: `*` usa box-sizing
+   border-box, y un border de 2 px le robaría proporción al aspect-ratio. */
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 6px 16px rgba(8, 39, 112, 0.18);
 }
 
 .saldo-img {
   display: block;
   width: 100%;
-  height: clamp(200px, 46vw, 300px);
+  height: 100%;
   object-fit: cover;
-  border-radius: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 6px 16px rgba(8, 39, 112, 0.18);
-  background: var(--surface-track);
+  object-position: center;
 }
 
 .saldo-v {
@@ -2376,7 +2384,7 @@ button.primario:active {
     padding: 0.9rem 0.55rem;
   }
 
-  .saldo-img {
+  .saldo-img-wrap {
     border-radius: 14px;
   }
 
