@@ -6,17 +6,25 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import require_admin
-from ..models import Canje, Cliente, LedgerPuntos, Regla, Vehiculo, Venta, utcnow
+from ..models import AuditoriaCliente, Canje, Cliente, LedgerPuntos, Regla, Usuario, Vehiculo, Venta, utcnow
 from ..schemas import (
     CatalogoIn,
     ClientePatchIn,
+    IsleroCreate,
+    IsleroPatch,
     ReglaIn,
     ReglaPatchIn,
     ReversoIn,
     VehiculoIn,
 )
-from ..security import cedula_valida, normalizar_cedula, normalizar_placa, placa_valida
-from ..services import catalogo, ledger, niveles, periodo
+from ..security import (
+    cedula_valida,
+    hash_password,
+    normalizar_cedula,
+    normalizar_placa,
+    placa_valida,
+)
+from ..services import catalogo, ledger, niveles, periodo, registro_clientes
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
@@ -471,6 +479,92 @@ def guardar_catalogo(body: CatalogoIn, db: Session = Depends(get_db)):
         "niveles": guardado["niveles"],
         "premios": guardado["premios"],
     }
+
+
+def _islero_o_404(db: Session, islero_id: int) -> Usuario:
+    usuario = db.get(Usuario, islero_id)
+    if usuario is None or usuario.rol != "islero":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Islero no encontrado")
+    return usuario
+
+
+@router.get("/isleros")
+def listar_isleros(db: Session = Depends(get_db)):
+    usuarios = db.scalars(select(Usuario).where(Usuario.rol == "islero").order_by(Usuario.id)).all()
+    conteos = dict(
+        db.execute(
+            select(AuditoriaCliente.usuario_id, func.count(AuditoriaCliente.id)).group_by(
+                AuditoriaCliente.usuario_id
+            )
+        ).all()
+    )
+    return [
+        {
+            "id": u.id,
+            "usuario": u.usuario,
+            "nombre": u.nombre,
+            "activo": u.activo,
+            "ultimo_acceso": u.ultimo_acceso,
+            "created_at": u.created_at,
+            "registros": conteos.get(u.id, 0),
+        }
+        for u in usuarios
+    ]
+
+
+@router.post("/isleros", status_code=status.HTTP_201_CREATED)
+def crear_islero(body: IsleroCreate, db: Session = Depends(get_db)):
+    usuario = body.usuario.strip()
+    if not usuario:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "El usuario es obligatorio")
+    if db.scalar(select(Usuario).where(Usuario.usuario == usuario)) is not None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ese usuario ya existe")
+
+    islero = Usuario(
+        usuario=usuario,
+        nombre=body.nombre.strip(),
+        password_hash=hash_password(body.password),
+        rol="islero",
+        activo=body.activo,
+    )
+    db.add(islero)
+    db.commit()
+    db.refresh(islero)
+    return {
+        "id": islero.id,
+        "usuario": islero.usuario,
+        "nombre": islero.nombre,
+        "activo": islero.activo,
+    }
+
+
+@router.patch("/isleros/{islero_id}")
+def actualizar_islero(islero_id: int, body: IsleroPatch, db: Session = Depends(get_db)):
+    islero = _islero_o_404(db, islero_id)
+
+    if body.nombre is not None:
+        nombre = body.nombre.strip()
+        if not nombre:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "El nombre es obligatorio")
+        islero.nombre = nombre
+    if body.password is not None:
+        islero.password_hash = hash_password(body.password)
+    if body.activo is not None:
+        islero.activo = body.activo
+
+    db.commit()
+    return {
+        "id": islero.id,
+        "usuario": islero.usuario,
+        "nombre": islero.nombre,
+        "activo": islero.activo,
+    }
+
+
+@router.get("/isleros/{islero_id}/registros")
+def registros_de_islero(islero_id: int, limite: int = 50, db: Session = Depends(get_db)):
+    islero = _islero_o_404(db, islero_id)
+    return registro_clientes.listar_registros(db, islero.id, limite)
 
 
 

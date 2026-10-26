@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     OTP_RATE_VENTANA: int = 900
     ADMIN_RATE_MAX: int = 10
     ADMIN_RATE_VENTANA: int = 900
+    ISLERO_RATE_MAX: int = 10
+    ISLERO_RATE_VENTANA: int = 900
     CORS_ORIGINS: str = "*"
     API_PREFIX: str = "/fid-api"
     SYNC_API_KEY: str = "dev-api-key"

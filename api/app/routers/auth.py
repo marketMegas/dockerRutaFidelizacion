@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
-from ..models import Cliente, Vehiculo
-from ..schemas import AdminLogin, IdentificarIn, OtpRequest, OtpVerify
+from ..models import Cliente, Usuario, Vehiculo
+from ..models import utcnow as utcnow_modelo
+from ..schemas import AdminLogin, IdentificarIn, IsleroLogin, OtpRequest, OtpVerify
 from ..security import (
     cedula_valida,
     crear_token,
@@ -18,6 +19,7 @@ from ..security import (
     normalizar_placa,
     placa_valida,
     utcnow,
+    verify_password,
 )
 from ..services import rate_limit, sms
 
@@ -226,4 +228,29 @@ def admin_login(body: AdminLogin, request: Request):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
     if body.usuario != settings.ADMIN_USER or body.password != settings.ADMIN_PASSWORD:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Credenciales invalidas")
-    return {"access_token": crear_token(body.usuario, "admin"), "token_type": "bearer"}
+    return {
+        "access_token": crear_token(body.usuario, "admin"),
+        "token_type": "bearer",
+        "rol": "admin",
+        "nombre": "Administrador",
+    }
+
+
+@router.post("/islero")
+def islero_login(body: IsleroLogin, request: Request, db: Session = Depends(get_db)):
+    ip = _client_ip(request)
+    if not rate_limit.permitir(f"islero:{ip}", settings.ISLERO_RATE_MAX, settings.ISLERO_RATE_VENTANA):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
+
+    usuario = db.scalar(select(Usuario).where(Usuario.usuario == body.usuario))
+    if usuario is None or not usuario.activo or not verify_password(body.password, usuario.password_hash):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Credenciales invalidas")
+
+    usuario.ultimo_acceso = utcnow_modelo()
+    db.commit()
+    return {
+        "access_token": crear_token(usuario.id, "islero"),
+        "token_type": "bearer",
+        "rol": "islero",
+        "nombre": usuario.nombre or usuario.usuario,
+    }

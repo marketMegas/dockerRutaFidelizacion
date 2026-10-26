@@ -28,6 +28,17 @@ def generar_otp() -> str:
     return f"{secrets.randbelow(1000000):06d}"
 
 
+def normalizar_telefono(valor: str | None) -> str:
+    digitos = "".join(ch for ch in (valor or "") if ch.isdigit())
+    if len(digitos) == 12 and digitos.startswith("57"):
+        return digitos[2:]
+    return digitos
+
+
+def telefono_valido(valor: str | None) -> bool:
+    return len(normalizar_telefono(valor)) == 10
+
+
 def normalizar_cedula(valor: str | None) -> str:
     return "".join(ch for ch in (valor or "") if ch.isdigit())
 
@@ -56,3 +67,45 @@ def enmascarar_telefono(telefono: str | None) -> str:
 def hash_otp(identidad: str, codigo: str) -> str:
     msg = f"{identidad}:{codigo}".encode()
     return hmac.new(settings.SECRET_KEY.encode(), msg, hashlib.sha256).hexdigest()
+
+
+_SCRYPT_N = 2**14
+_SCRYPT_R = 8
+_SCRYPT_P = 1
+_SCRYPT_DKLEN = 32
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    derivada = hashlib.scrypt(
+        password.encode(),
+        salt=salt,
+        n=_SCRYPT_N,
+        r=_SCRYPT_R,
+        p=_SCRYPT_P,
+        dklen=_SCRYPT_DKLEN,
+    )
+    return f"scrypt${salt.hex()}${derivada.hex()}"
+
+
+def verify_password(password: str, almacenado: str | None) -> bool:
+    if not almacenado:
+        return False
+    try:
+        algoritmo, salt_hex, hash_hex = almacenado.split("$", 2)
+        if algoritmo != "scrypt":
+            return False
+        salt = bytes.fromhex(salt_hex)
+        esperado = bytes.fromhex(hash_hex)
+    except ValueError:
+        return False
+
+    derivada = hashlib.scrypt(
+        password.encode(),
+        salt=salt,
+        n=_SCRYPT_N,
+        r=_SCRYPT_R,
+        p=_SCRYPT_P,
+        dklen=len(esperado),
+    )
+    return hmac.compare_digest(derivada, esperado)

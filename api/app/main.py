@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from .config import settings
 from .database import SessionLocal, engine
 from .models import Base, Regla
-from .routers import admin, auth, canjes, clientes, sync
+from .routers import admin, auth, canjes, clientes, islero, sync
 from .services import catalogo
 
 
@@ -42,6 +42,7 @@ app.add_middleware(
 prefijo = settings.API_PREFIX
 app.include_router(auth.router, prefix=prefijo)
 app.include_router(clientes.router, prefix=prefijo)
+app.include_router(islero.router, prefix=prefijo)
 app.include_router(sync.router, prefix=prefijo)
 app.include_router(canjes.router, prefix=prefijo)
 app.include_router(admin.router, prefix=prefijo)

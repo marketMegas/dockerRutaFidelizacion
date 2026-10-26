@@ -1,20 +1,30 @@
 import { useState } from 'react'
-import { api, setToken } from '../api.js'
+import { api, setSesion } from '../api.js'
 
 export default function Login({ onLogin }) {
+  const [tipo, setTipo] = useState('admin')
   const [usuario, setUsuario] = useState('admin')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
+
+  function cambiarTipo(nuevo) {
+    setTipo(nuevo)
+    setUsuario(nuevo === 'admin' ? 'admin' : '')
+    setPassword('')
+    setError('')
+  }
 
   async function entrar(e) {
     e.preventDefault()
     setError('')
     setCargando(true)
     try {
-      const data = await api('/auth/admin', { method: 'POST', body: { usuario, password } })
-      setToken(data.access_token)
-      onLogin()
+      const endpoint = tipo === 'islero' ? '/auth/islero' : '/auth/admin'
+      const data = await api(endpoint, { method: 'POST', body: { usuario, password } })
+      const rol = data.rol || tipo
+      setSesion(data.access_token, rol, data.nombre || '')
+      onLogin(rol, data.nombre || '')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -25,8 +35,30 @@ export default function Login({ onLogin }) {
   return (
     <div className="login">
       <form onSubmit={entrar}>
-        <h1>Panel de control Fidelización g-max</h1>
-        <p className="muted">Acceso administrador</p>
+        <h1>{tipo === 'islero' ? 'Módulo de isleros' : 'Panel de control Fidelización g-max'}</h1>
+        <p className="muted">{tipo === 'islero' ? 'Registro de clientes en isla' : 'Acceso administrador'}</p>
+
+        <div className="login-tabs" role="tablist" aria-label="Tipo de acceso">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tipo === 'admin'}
+            className={tipo === 'admin' ? 'activo' : ''}
+            onClick={() => cambiarTipo('admin')}
+          >
+            Administrador
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tipo === 'islero'}
+            className={tipo === 'islero' ? 'activo' : ''}
+            onClick={() => cambiarTipo('islero')}
+          >
+            Islero
+          </button>
+        </div>
+
         <label>
           Usuario
           <input value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" />

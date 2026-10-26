@@ -12,6 +12,28 @@ export function getToken() {
   return token
 }
 
+export function setSesion(nuevoToken, rol, nombre) {
+  setToken(nuevoToken)
+  if (rol) localStorage.setItem('fid_rol', rol)
+  else localStorage.removeItem('fid_rol')
+  if (nombre) localStorage.setItem('fid_nombre', nombre)
+  else localStorage.removeItem('fid_nombre')
+}
+
+export function getRol() {
+  return localStorage.getItem('fid_rol') || 'admin'
+}
+
+export function getNombre() {
+  return localStorage.getItem('fid_nombre') || ''
+}
+
+export function limpiarSesion() {
+  setToken('')
+  localStorage.removeItem('fid_rol')
+  localStorage.removeItem('fid_nombre')
+}
+
 export async function api(path, { method = 'GET', body } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers.Authorization = `Bearer ${token}`
@@ -25,7 +47,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   const data = await res.json().catch(() => ({}))
 
   if (res.status === 401 && !path.includes('/auth/')) {
-    setToken('')
+    limpiarSesion()
     window.location.reload()
     throw new Error('Sesión expirada')
   }

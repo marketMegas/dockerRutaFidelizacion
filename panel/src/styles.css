@@ -609,6 +609,117 @@ tbody tr:hover td {
   padding: 0.65rem;
 }
 
+.login-tabs {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.login-tabs button {
+  flex: 1;
+  background: #eef7ea;
+  color: var(--text);
+  border-color: var(--line);
+  font-weight: 600;
+  padding: 0.45rem 0.5rem;
+}
+
+.login-tabs button:hover {
+  background: #e3f1dc;
+  color: var(--text);
+}
+
+.login-tabs button.activo,
+.login-tabs button.activo:hover {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green-3);
+}
+
+.sidebar-usuario {
+  margin: -0.9rem 0 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+}
+
+.islero-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem 1rem;
+  max-width: 780px;
+  margin: 1rem 0;
+  padding: 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.islero-form label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.islero-form input {
+  width: 100%;
+  min-width: 0;
+}
+
+.islero-form .campo-placa {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.islero-form .campo-placa label {
+  flex: 1 1 200px;
+}
+
+.islero-form .campo-placa input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.15rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.islero-form .acciones {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.islero-form .acciones button {
+  min-height: 42px;
+  min-width: 180px;
+}
+
+.islero-form .error,
+.islero-form .ok {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .islero-form {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1rem;
+  }
+  .islero-form .campo-placa {
+    grid-column: auto;
+  }
+  .islero-form .acciones button {
+    width: 100%;
+  }
+  .sidebar-usuario {
+    margin: 0;
+    flex-basis: 100%;
+  }
+}
+
 @media (max-width: 760px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);

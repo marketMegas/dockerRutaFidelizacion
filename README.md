@@ -15,7 +15,7 @@ integracion con Zencillo.
 | Carpeta               | Que es                                                       | Stack                       | Puerto (host) |
 |-----------------------|-------------------------------------------------------------|-----------------------------|---------------|
 | `api/`                | Backend: reglas, puntos (ledger), auth OTP/JWT, admin        | FastAPI + SQLAlchemy + Postgres | 127.0.0.1:8002 |
-| `panel/`              | Panel de administracion (React SPA)                          | React 18 + Vite + nginx     | 127.0.0.1:5139 |
+| `panel/`              | Panel de administracion y modulo de isleros (React SPA)      | React 18 + Vite + nginx     | 127.0.0.1:5139 |
 | `pwa/`                | App del cliente (instalable: saldo, nivel y codigos)         | React 18 + Vite + nginx     | 127.0.0.1:5140 |
 | `connector-zencillo/` | Trae ventas desde Zencillo (o simulador) hacia la API        | Python + requests           | -             |
 | `deploy/`             | Script de despliegue y plantillas de LiteSpeed               | bash                        | -             |
@@ -62,6 +62,24 @@ reverso que dejaria el saldo en negativo se rechaza.
 - **La cedula es opcional para canjear.** El canje se identifica con la sesion del cliente.
   El panel conserva una bitacora de solo lectura de codigos entregados, con busqueda por
   cedula.
+
+## Modulo de isleros
+
+El personal que despacha combustible puede registrar clientes de forma presencial desde el mismo panel
+(`/panel/`), sin OTP ni SMS.
+
+- El **admin** crea las cuentas en la seccion **Isleros** (usuario, nombre y contraseña de al menos 10
+  caracteres) y puede activarlas, desactivarlas o resetear la clave. No hay credenciales de islero en `.env`.
+- El islero entra con la pestaña **Islero** del login y solo ve su modulo de registro. El backend valida el rol
+  en cada peticion: un token de islero no puede llamar endpoints de administracion.
+- El flujo pide **placa, cedula y celular** (nombre opcional). Al consultar la placa, si ya existe muestra los
+  datos del dueño y permite corregir cedula/celular con confirmacion; si no existe crea el cliente y su vehiculo.
+  Si el celular ya pertenece a una cuenta, la placa se asocia a esa cuenta; si la cedula no coincide se rechaza.
+- Los duplicados de cedula, celular o placa responden `409`. Cada alta o actualizacion queda registrada en
+  `auditoria_clientes` con el islero, la IP, la fecha y los valores antes/despues.
+- El islero **no registra litros ni ventas** ni ve puntos o niveles. Los puntos siguen llegando por el conector
+  de Zencillo cuando reporta la venta de esa placa.
+- El cliente registrado por el islero puede entrar despues a la PWA con el flujo normal de OTP.
 
 ## Requisitos
 
@@ -143,6 +161,7 @@ Prefijo `API_PREFIX=/fid-api`.
 - `POST /fid-api/auth/otp/request` y `POST /fid-api/auth/otp/verify` — login del cliente por placa
   (auto-registro; `cedula` obligatoria al crear la cuenta, validada como 6 a 10 numeros).
 - `POST /fid-api/auth/admin` — login del panel.
+- `POST /fid-api/auth/islero` — login del personal de isla (rol `islero`).
 - `GET  /fid-api/clientes/me`, `/me/movimientos` — datos del cliente autenticado (`placas`, `cedula`).
 - `PATCH /fid-api/clientes/me` — el cliente agrega/actualiza su cedula (duplicada = 409).
 - `POST /fid-api/sync/venta` — ingesta de ventas (header `X-API-Key`), idempotente por `id_externo`.
@@ -154,6 +173,10 @@ Prefijo `API_PREFIX=/fid-api`.
 - `GET  /fid-api/admin/resumen|ventas|clientes|canjes|reglas|catalogo` y endpoints de gestion/reverso.
   `GET /admin/canjes?q=<cedula>` filtra la bitacora de codigos entregados por cedula (solo lectura).
 - `PATCH /fid-api/admin/clientes/{id}` — editar nombre/cedula del cliente desde el panel.
+- `GET  /fid-api/islero/clientes?placa=` — consulta el dueno de una placa (solo rol islero).
+- `POST /fid-api/islero/clientes` — registra o actualiza placa, cedula, celular y nombre; audita cada cambio.
+- `GET  /fid-api/islero/registros` — historial de registros del islero autenticado.
+- `GET/POST /fid-api/admin/isleros` y `PATCH /admin/isleros/{id}` — gestion de cuentas de islero (solo admin).
 - `POST /fid-api/admin/reglas` y `PUT /fid-api/admin/reglas/{id}` — crear y editar reglas (edicion parcial:
   solo se pisan los campos enviados; valida nombre duplicado con 409 y `desde > hasta` con 400).
 - `GET/PUT /fid-api/admin/catalogo` — leer y guardar niveles + premios + pool de codigos con
@@ -200,6 +223,8 @@ Valores a cambiar antes de produccion:
   de desarrollo).
 - `ADMIN_RATE_MAX` / `ADMIN_RATE_VENTANA`: limite de intentos de login del panel admin por IP
   (por defecto 10 intentos / 900 s).
+- `ISLERO_RATE_MAX` / `ISLERO_RATE_VENTANA`: limite de intentos de login de isleros por IP
+  (por defecto 10 intentos / 900 s).
 
 Luego:
 
@@ -242,9 +267,10 @@ respaldos automaticos. El catalogo tambien se puede copiar del volumen
 
 ### 8. Endurecimiento: pendientes post-despliegue
 
-Ya estan activos: rate-limit del login admin por IP (`ADMIN_RATE_MAX`/`ADMIN_RATE_VENTANA`),
-CORS explicito (`CORS_ORIGINS`) y cabeceras de seguridad en `pwa/nginx.conf` y
-`panel/nginx.conf` (`nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
+Ya estan activos: rate-limit del login admin e isleros por IP (`ADMIN_RATE_MAX`/`ADMIN_RATE_VENTANA`
+e `ISLERO_RATE_MAX`/`ISLERO_RATE_VENTANA`), CORS explicito (`CORS_ORIGINS`) y cabeceras de seguridad
+en `pwa/nginx.conf` y `panel/nginx.conf` (`nosniff`, `X-Frame-Options`, `Referrer-Policy`,
+`Permissions-Policy`).
 
 Quedan **dos pasos manuales** que se hacen solo despues de confirmar SSL en el VPS
 (ambos afectan a los `nginx.conf` de panel y PWA):
@@ -277,5 +303,6 @@ cd api && ruff check . && pytest
 La suite cubre el motor de reglas, el ledger (acumulacion, canje con codigo, reverso que repone
 el codigo, saldo insuficiente), los niveles por consumo mensual y su corte de mes, el catalogo
 en archivo (version, conflictos, validacion), la importacion de codigos existentes, las cuentas
-multivehiculo y los endpoints principales a traves de HTTP.
+multivehiculo, el modulo de isleros (roles, registro, duplicados y auditoria) y los endpoints
+principales a traves de HTTP.
 # dockerRutaFidelizacion

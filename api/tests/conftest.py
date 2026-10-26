@@ -12,6 +12,7 @@ os.environ["API_PREFIX"] = "/fid-api"
 # El rate-limit del login admin es por IP; en pruebas todas comparten "testclient",
 # asi que se sube el tope para no bloquear la suite.
 os.environ["ADMIN_RATE_MAX"] = "100000"
+os.environ["ISLERO_RATE_MAX"] = "100000"
 
 # El catalogo se aislia en un archivo propio: las pruebas no tocan el de la app.
 CATALOGO_TEST = Path(tempfile.gettempdir()) / "fidelizacion_catalogo_test.json"
@@ -22,7 +23,8 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.database import SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import Base  # noqa: E402
+from app.models import Base, Usuario  # noqa: E402
+from app.security import hash_password  # noqa: E402
 from app.services import catalogo  # noqa: E402
 
 DB_FILE = Path("test_fidelizacion.db")
@@ -60,6 +62,34 @@ def client(db):
 @pytest.fixture()
 def admin_headers(client):
     resp = client.post(f"{PREFIX}/auth/admin", json={"usuario": "admin", "password": "admin123"})
+    assert resp.status_code == 200, resp.text
+    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+
+
+def crear_islero(
+    db,
+    usuario: str = "islero1",
+    password: str = "islero12345",
+    nombre: str = "Islero Uno",
+    activo: bool = True,
+) -> Usuario:
+    islero = Usuario(
+        usuario=usuario,
+        nombre=nombre,
+        password_hash=hash_password(password),
+        rol="islero",
+        activo=activo,
+    )
+    db.add(islero)
+    db.commit()
+    db.refresh(islero)
+    return islero
+
+
+@pytest.fixture()
+def islero_headers(client, db):
+    crear_islero(db)
+    resp = client.post(f"{PREFIX}/auth/islero", json={"usuario": "islero1", "password": "islero12345"})
     assert resp.status_code == 200, resp.text
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 

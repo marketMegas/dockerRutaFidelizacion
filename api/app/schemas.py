@@ -24,6 +24,31 @@ class AdminLogin(BaseModel):
     password: str
 
 
+class IsleroLogin(BaseModel):
+    usuario: str
+    password: str
+
+
+class RegistroIsleroIn(BaseModel):
+    placa: str = Field(min_length=1, max_length=20)
+    cedula: str = Field(min_length=1, max_length=15)
+    telefono: str = Field(min_length=1, max_length=20)
+    nombre: str | None = Field(default=None, max_length=120)
+
+
+class IsleroCreate(BaseModel):
+    usuario: str = Field(min_length=3, max_length=60)
+    nombre: str = Field(min_length=2, max_length=120)
+    password: str = Field(min_length=10, max_length=200)
+    activo: bool = True
+
+
+class IsleroPatch(BaseModel):
+    nombre: str | None = Field(default=None, min_length=2, max_length=120)
+    password: str | None = Field(default=None, min_length=10, max_length=200)
+    activo: bool | None = None
+
+
 class ClientePatchIn(BaseModel):
     cedula: str | None = Field(default=None, min_length=5, max_length=15)
     nombre: str | None = Field(default=None, max_length=120)

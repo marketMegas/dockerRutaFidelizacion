@@ -3,7 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from .database import get_db
-from .models import Cliente
+from .models import Cliente, Usuario
 from .security import decodificar_token
 
 bearer = HTTPBearer(auto_error=False)
@@ -36,3 +36,20 @@ def require_cliente(
     if cliente is None or not cliente.activo:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Cliente no valido")
     return cliente
+
+
+def require_islero(
+    cred: HTTPAuthorizationCredentials | None = Depends(bearer),
+    db: Session = Depends(get_db),
+) -> Usuario:
+    payload = _payload(cred)
+    if payload.get("role") != "islero":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Requiere rol islero")
+    try:
+        usuario_id = int(payload["sub"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token invalido") from exc
+    usuario = db.get(Usuario, usuario_id)
+    if usuario is None or not usuario.activo or usuario.rol != "islero":
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Usuario no valido")
+    return usuario
