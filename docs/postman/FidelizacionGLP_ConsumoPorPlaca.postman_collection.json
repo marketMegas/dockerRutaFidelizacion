@@ -1,0 +1,200 @@
+{
+  "info": {
+    "name": "FidelizacionGLP - Consumo por placa",
+    "description": "Colección para integración de envíos de consumo por placa (únicamente PLACA + LITROS + ID_TRANSACCION).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8002"
+    },
+    {
+      "key": "api_key",
+      "value": "dev-api-key"
+    }
+  ],
+  "item": [
+    {
+      "name": "GET Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST Enviar consumo por placa (válido ABC123)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"placa\": \"ABC123\",\n  \"litros\": 12.50,\n  \"id_transaccion\": \"{{$guid}}\",\n  \"estacion_id\": \"EDS-01\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/fid-api/integracion/consumos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "fid-api",
+            "integracion",
+            "consumos"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST Enviar consumo por placa (sin cliente vinculado)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"placa\": \"DEF456\",\n  \"litros\": 8.25,\n  \"id_transaccion\": \"{{$guid}}\",\n  \"estacion_id\": \"EDS-01\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/fid-api/integracion/consumos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "fid-api",
+            "integracion",
+            "consumos"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST Enviar consumo por placa (duplicado - mismo id_transaccion)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"placa\": \"ABC123\",\n  \"litros\": 12.50,\n  \"id_transaccion\": \"REEMPLAZAR_CON_ID_TRANSACCION_ANTERIOR\",\n  \"estacion_id\": \"EDS-01\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/fid-api/integracion/consumos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "fid-api",
+            "integracion",
+            "consumos"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST Enviar consumo por placa (formato inválido - minúsculas)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"placa\": \"abc123\",\n  \"litros\": 10.00,\n  \"id_transaccion\": \"{{$guid}}\",\n  \"estacion_id\": \"EDS-01\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/fid-api/integracion/consumos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "fid-api",
+            "integracion",
+            "consumos"
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST Enviar consumo por placa (formato inválido - largo/corto)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"placa\": \"AB1234\",\n  \"litros\": 10.00,\n  \"id_transaccion\": \"{{$guid}}\",\n  \"estacion_id\": \"EDS-01\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/fid-api/integracion/consumos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "fid-api",
+            "integracion",
+            "consumos"
+          ]
+        }
+      }
+    }
+  ]
+}
