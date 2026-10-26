@@ -13,11 +13,7 @@ const TITULOS = {
   codigo: 'Verifica tu código',
 }
 
-const HEROES = [
-  'https://images.pexels.com/photos/40431732/pexels-photo-40431732.jpeg',
-  'https://images.pexels.com/photos/40431768/pexels-photo-40431768.jpeg',
-]
-const HERO_MS = 5000
+const HERO = 'https://images.pexels.com/photos/40431732/pexels-photo-40431732.jpeg'
 
 function formatearPlaca(valor) {
   const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -39,18 +35,11 @@ export default function Login({ onLogin }) {
   const [debug, setDebug] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
-  const [heroe, setHeroe] = useState(0)
 
   useEffect(() => {
     api('/catalogo')
       .then((data) => setPremios(data.premios || []))
       .catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const id = setInterval(() => setHeroe((i) => (i + 1) % HEROES.length), HERO_MS)
-    return () => clearInterval(id)
   }, [])
 
   async function pedirCodigo(telefonoRegistro) {
@@ -131,37 +120,25 @@ export default function Login({ onLogin }) {
       <div className="login-hero">
         <div className="login-hero-texto">
           <h1>
-            <span className="login-hero-label">Programa:</span>
-            Fidelización puntos g-max
+            <span className="login-hero-label">Programa de</span>
+            Fidelización de puntos{' '}
+            <span className="marca-gmax">
+              <span className="gmax-g">g-</span>
+              <span className="gmax-max">max</span>
+            </span>
           </h1>
           <p>Suma puntos por cada litro que cargas. Mientras más cargues, más puntos por litro.</p>
         </div>
 
         <div className="login-hero-carrusel">
-          {HEROES.map((url, i) => (
-            <img
-              key={url}
-              className={`login-hero-banner${i === heroe ? ' activa' : ''}`}
-              src={url}
-              alt=""
-              decoding="async"
-              loading={i === 0 ? 'eager' : 'lazy'}
-              referrerPolicy="no-referrer"
-            />
-          ))}
-
-          <div className="login-hero-puntos">
-            {HEROES.map((url, i) => (
-              <button
-                key={url}
-                type="button"
-                className={i === heroe ? 'activo' : ''}
-                onClick={() => setHeroe(i)}
-                aria-label={`Ver la foto ${i + 1} de ${HEROES.length}`}
-                aria-current={i === heroe}
-              />
-            ))}
-          </div>
+          <img
+            className="login-hero-banner activa"
+            src={HERO}
+            alt=""
+            decoding="async"
+            loading="eager"
+            referrerPolicy="no-referrer"
+          />
         </div>
       </div>
 

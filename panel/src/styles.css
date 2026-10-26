@@ -680,10 +680,16 @@ tbody tr:hover td {
 }
 
 .islero-form .campo-placa input {
+  background: #ffe600;
+  border-color: #d9c400;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 1.15rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.islero-form .campo-placa input::placeholder {
+  color: rgba(23, 51, 28, 0.55);
 }
 
 .islero-form .acciones {
@@ -701,6 +707,118 @@ tbody tr:hover td {
 .islero-form .ok {
   grid-column: 1 / -1;
   margin: 0;
+}
+
+/* Tema del modulo de isleros: naranja corporativo sobre superficies claras */
+.tema-islero {
+  --green: #f6811e;
+  --green-2: #f79542;
+  --green-3: #a8540a;
+  --line: #f0d9c6;
+  --shadow: 0 1px 2px rgba(246, 129, 30, 0.12), 0 8px 24px -12px rgba(246, 129, 30, 0.3);
+}
+
+.tema-islero .sidebar {
+  color: #2a1a08;
+}
+
+.tema-islero .brand {
+  color: #2a1a08;
+  border-bottom-color: rgba(42, 26, 8, 0.3);
+}
+
+.tema-islero .brand span {
+  color: #fff;
+}
+
+.tema-islero .sidebar nav button {
+  background: transparent;
+  color: rgba(42, 26, 8, 0.82);
+}
+
+.tema-islero .sidebar nav button:hover,
+.tema-islero .sidebar nav button.activo {
+  background: var(--green-2);
+  color: #2a1a08;
+}
+
+.tema-islero .sidebar nav button.activo {
+  border-left-color: #2a1a08;
+}
+
+.tema-islero .salir {
+  background: transparent;
+  color: #2a1a08;
+  border-color: rgba(42, 26, 8, 0.5);
+}
+
+.tema-islero .salir:hover {
+  border-color: #2a1a08;
+}
+
+.tema-islero .sidebar-usuario {
+  color: rgba(42, 26, 8, 0.72);
+}
+
+.tema-islero button {
+  background: #5bf300;
+  border-color: #3fae00;
+  color: #17331c;
+}
+
+.tema-islero button:hover {
+  background: #7cff3a;
+  border-color: #3fae00;
+  color: #17331c;
+}
+
+.tema-islero form.fila button:hover,
+.tema-islero .login button:hover {
+  background: #7cff3a;
+  color: #17331c;
+}
+
+.tema-islero .login button {
+  background: #5bf300;
+  border-color: #3fae00;
+  color: #17331c;
+}
+
+.tema-islero th {
+  background: #fdf0e4;
+  color: var(--green-3);
+}
+
+.tema-islero tbody tr:hover td {
+  background: #fff8f1;
+}
+
+.tema-islero .ok {
+  background: #fdf0e4;
+  color: var(--green-3);
+  border-color: var(--line);
+}
+
+.tema-islero .login-tabs button {
+  background: #fdf0e4;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.tema-islero .login-tabs button:hover {
+  background: #fbe3cf;
+  color: var(--text);
+}
+
+.tema-islero .login-tabs button.activo,
+.tema-islero .login-tabs button.activo:hover {
+  background: var(--green);
+  border-color: var(--green-3);
+  color: #2a1a08;
+}
+
+.tema-islero.login {
+  background: radial-gradient(1200px 600px at 80% -10%, #f79542 0%, #f6811e 55%);
 }
 
 @media (max-width: 760px) {

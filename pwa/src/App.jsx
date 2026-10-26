@@ -105,7 +105,13 @@ export default function App() {
       </div>
 
       <footer className="pie-app">
-        <span className="pie-app-marca">Fidelización PUNTOS G-MAX</span>
+        <span className="pie-app-marca">
+          Programa de Fidelización de puntos{' '}
+          <span className="marca-gmax">
+            <span className="gmax-g">g-</span>
+            <span className="gmax-max">max</span>
+          </span>
+        </span>
         <a
           className="pie-app-link"
           href="/Politica%20de%20Datos%20personales%20-%20Megas.pdf"

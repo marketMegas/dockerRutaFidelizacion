@@ -175,12 +175,26 @@ h2::after {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--tinta-sobre-marca);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+  background: #fff;
+  color: var(--azul-hondo);
+  padding: 0.12rem 0.55rem;
+  border-radius: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+}
+
+.marca-gmax {
+  text-transform: lowercase;
+}
+
+.gmax-g {
+  color: #073edb;
+}
+
+.gmax-max {
+  color: #5bf300;
 }
 
 .navbar-acciones {
@@ -593,6 +607,47 @@ h2::after {
 }
 
 /* Chip de tarjeta de contacto */
+
+.saldo-heroe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.saldo-heroe .saldo {
+  flex: 0 0 42%;
+  width: auto;
+  padding: 1.2rem 0.8rem;
+}
+
+.saldo-heroe .saldo-v {
+  font-size: clamp(1.9rem, 8vw, 3.4rem);
+}
+
+.saldo-heroe .saldo-t {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.saldo-img-wrap {
+  flex: 1 1 58%;
+  min-width: 0;
+}
+
+.saldo-img {
+  display: block;
+  width: 100%;
+  height: clamp(200px, 46vw, 300px);
+  object-fit: cover;
+  border-radius: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 6px 16px rgba(8, 39, 112, 0.18);
+  background: var(--surface-track);
+}
 
 .saldo-v {
   position: relative;
@@ -1512,7 +1567,7 @@ button.primario:active {
   text-indent: 0.2em;
   text-transform: uppercase;
   text-align: center;
-  background: var(--placa);
+  background: #ffe600;
   color: var(--placa-tinta);
   border: 0;
   border-radius: var(--radius-ctrl);
@@ -2311,6 +2366,18 @@ button.primario:active {
 
   .saldo-v {
     font-size: 3.2rem;
+  }
+
+  .saldo-heroe {
+    gap: 0.6rem;
+  }
+
+  .saldo-heroe .saldo {
+    padding: 0.9rem 0.55rem;
+  }
+
+  .saldo-img {
+    border-radius: 14px;
   }
 
   .saldo-mini-v {

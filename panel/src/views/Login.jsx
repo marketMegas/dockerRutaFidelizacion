@@ -33,7 +33,7 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="login">
+    <div className={tipo === 'islero' ? 'login tema-islero' : 'login'}>
       <form onSubmit={entrar}>
         <h1>{tipo === 'islero' ? 'Módulo de isleros' : 'Panel de control Fidelización g-max'}</h1>
         <p className="muted">{tipo === 'islero' ? 'Registro de clientes en isla' : 'Acceso administrador'}</p>

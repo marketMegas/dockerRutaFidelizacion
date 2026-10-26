@@ -12,7 +12,13 @@ export default function Navbar({ vista, onNavegar, logueado, puntos, onSesion })
     <header className="navbar">
       <div className="navbar-fila">
         <div className="navbar-logo">
-          <span className="navbar-marca">Fidelización puntos g-max</span>
+          <span className="navbar-marca">
+            Programa de Fidelización de puntos{' '}
+            <span className="marca-gmax">
+              <span className="gmax-g">g-</span>
+              <span className="gmax-max">max</span>
+            </span>
+          </span>
         </div>
 
         <div className="navbar-acciones">

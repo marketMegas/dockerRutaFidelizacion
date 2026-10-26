@@ -58,7 +58,7 @@ export default function App() {
   }
 
   return (
-    <div className="layout">
+    <div className={rol === 'islero' ? 'layout tema-islero' : 'layout'}>
       <aside className="sidebar">
         <h1 className="brand">
           {rol === 'islero' ? 'Módulo de isleros' : 'Panel de control Fidelización'} <span>g-max</span>
