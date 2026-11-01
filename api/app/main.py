@@ -7,7 +7,8 @@ from sqlalchemy import func, select
 from .config import settings
 from .database import SessionLocal, engine
 from .models import Base, Regla
-from .routers import admin, auth, canjes, clientes, islero, sync
+from .routers import admin, asistente, auth, canjes, clientes, islero, sync
+from .security import validar_configuracion_produccion
 from .services import catalogo
 
 
@@ -25,12 +26,20 @@ def _seed():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validar_configuracion_produccion()
     Base.metadata.create_all(bind=engine)
     _seed()
     yield
 
 
-app = FastAPI(title="Fidelizacion GLP", version="0.1.0", lifespan=lifespan)
+# La documentacion interactiva solo se publica en desarrollo.
+_docs = (
+    {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+    if settings.DEBUG
+    else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+)
+
+app = FastAPI(title="Fidelizacion GLP", version="0.1.0", lifespan=lifespan, **_docs)
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +54,7 @@ app.include_router(clientes.router, prefix=prefijo)
 app.include_router(islero.router, prefix=prefijo)
 app.include_router(sync.router, prefix=prefijo)
 app.include_router(canjes.router, prefix=prefijo)
+app.include_router(asistente.router, prefix=prefijo)
 app.include_router(admin.router, prefix=prefijo)
 
 

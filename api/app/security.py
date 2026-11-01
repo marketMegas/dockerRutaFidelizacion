@@ -9,14 +9,58 @@ from .config import settings
 
 ALGORITHM = "HS256"
 
+# Valores de plantilla que NUNCA deben llegar a produccion.
+_PLANTILLAS_SECRET_KEY = {
+    "cambiar_por_openssl_rand_base64_48",
+    "secretkeyReemplazarEnProduccion",
+}
+
 
 def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def crear_token(sub: str, role: str, horas: int = 12) -> str:
+def comparar_seguro(valor: str | None, esperado: str | None) -> bool:
+    """Compara secretos en tiempo constante y rechaza valores vacios."""
+    if not valor or not esperado:
+        return False
+    return hmac.compare_digest(valor, esperado)
+
+
+def huella_admin() -> str:
+    """Huella de la password admin para invalidar tokens al cambiarla."""
+    mensaje = f"admin:{settings.ADMIN_PASSWORD}".encode()
+    return hmac.new(settings.SECRET_KEY.encode(), mensaje, hashlib.sha256).hexdigest()[:16]
+
+
+def validar_configuracion_produccion() -> None:
+    """Falla el arranque si en produccion quedan valores inseguros por defecto."""
+    if settings.DEBUG:
+        return
+
+    problemas: list[str] = []
+    secret = settings.SECRET_KEY.strip()
+    if secret in _PLANTILLAS_SECRET_KEY or len(secret) < 32:
+        problemas.append("SECRET_KEY de plantilla o menor a 32 caracteres")
+    if settings.ADMIN_PASSWORD in {"", "admin123"} or len(settings.ADMIN_PASSWORD) < 10:
+        problemas.append("ADMIN_PASSWORD vacia, de plantilla o menor a 10 caracteres")
+    if settings.SYNC_API_KEY in {"", "dev-api-key"} or len(settings.SYNC_API_KEY) < 16:
+        problemas.append("SYNC_API_KEY vacia, de plantilla o menor a 16 caracteres")
+    if settings.CORS_ORIGINS.strip() in {"", "*"}:
+        problemas.append("CORS_ORIGINS debe listar los dominios permitidos")
+    if (settings.SMS_PROVIDER or "").strip().lower() == "debug":
+        problemas.append("SMS_PROVIDER no puede ser 'debug' en produccion")
+
+    if problemas:
+        detalle = "\n- ".join(problemas)
+        raise RuntimeError(f"Configuracion insegura para produccion:\n- {detalle}")
+
+
+def crear_token(sub: str, role: str, horas: int = 12, extra: dict | None = None) -> str:
     ahora = utcnow()
     payload = {"sub": str(sub), "role": role, "iat": ahora, "exp": ahora + timedelta(hours=horas)}
+    if extra:
+        payload.update(extra)
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 

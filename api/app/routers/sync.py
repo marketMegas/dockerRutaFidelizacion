@@ -1,20 +1,22 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
+from ..deps import ip_cliente
 from ..models import Cliente, Vehiculo, Venta
 from ..schemas import VentaSync
-from ..security import normalizar_placa, placa_valida
-from ..services import ledger, niveles
+from ..security import comparar_seguro, normalizar_placa, normalizar_telefono, placa_valida
+from ..services import ledger, niveles, rate_limit
 from ..services.motor_de_reglas import calcular_puntos
 
 router = APIRouter(prefix="/sync", tags=["sync"])
 
 
 def _verificar_api_key(x_api_key: str) -> None:
-    if x_api_key != settings.SYNC_API_KEY:
+    # Comparacion en tiempo constante; rechaza tambien la key vacia.
+    if not comparar_seguro(x_api_key, settings.SYNC_API_KEY):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "API key invalida")
 
 
@@ -32,14 +34,15 @@ def _resolver_cliente(db: Session, body: VentaSync) -> tuple[Cliente, str]:
             if cliente is not None and cliente.activo:
                 return cliente, placa
 
-    if body.telefono:
-        cliente = db.scalar(select(Cliente).where(Cliente.telefono == body.telefono))
+    telefono = normalizar_telefono(body.telefono)
+    if telefono:
+        cliente = db.scalar(select(Cliente).where(Cliente.telefono == telefono))
         if cliente is not None and cliente.activo:
             return cliente, placa
 
     if placa:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Placa no registrada")
-    if body.telefono:
+    if telefono:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Telefono no registrado")
     raise HTTPException(status.HTTP_400_BAD_REQUEST, "Se requiere placa o telefono")
 
@@ -47,10 +50,15 @@ def _resolver_cliente(db: Session, body: VentaSync) -> tuple[Cliente, str]:
 @router.post("/venta")
 def sincronizar_venta(
     body: VentaSync,
+    request: Request,
     x_api_key: str = Header(default=""),
     db: Session = Depends(get_db),
 ):
     _verificar_api_key(x_api_key)
+
+    ip = ip_cliente(request)
+    if not rate_limit.permitir(f"sync:{ip}", settings.SYNC_RATE_MAX, settings.SYNC_RATE_VENTANA):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiadas ventas, espera un momento")
 
     existente = db.scalar(select(Venta).where(Venta.id_externo == body.id_externo))
     if existente is not None:

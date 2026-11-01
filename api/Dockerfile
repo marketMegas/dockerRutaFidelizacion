@@ -6,12 +6,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 app \
+    && mkdir -p /app/data \
+    && chown -R app:app /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY --chown=app:app . .
+RUN chown -R app:app /app/data
+
+USER app
 
 EXPOSE 8000
 

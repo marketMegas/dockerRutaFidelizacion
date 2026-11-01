@@ -12,6 +12,9 @@ _cliente: redis.Redis | None = None
 _inicializado = False
 _memoria: dict[str, list[float]] = {}
 _memoria_lock = threading.Lock()
+# Tope de claves en el fallback en memoria para que no crezca sin control.
+_MAX_CLAVES_MEMORIA = 20_000
+_HORIZONTE_MEMORIA = 3_600
 
 
 def _obtener() -> redis.Redis | None:
@@ -29,6 +32,17 @@ def _obtener() -> redis.Redis | None:
     return _cliente
 
 
+def _purgar_memoria(ahora: float) -> None:
+    """Descarta claves sin actividad reciente (se llama con el lock tomado)."""
+    limite = ahora - _HORIZONTE_MEMORIA
+    for clave in list(_memoria):
+        eventos = [t for t in _memoria.get(clave, []) if t >= limite]
+        if eventos:
+            _memoria[clave] = eventos
+        else:
+            _memoria.pop(clave, None)
+
+
 def _permitir_memoria(clave: str, maximo: int, ventana: int) -> bool:
     ahora = time.monotonic()
     limite = ahora - ventana
@@ -39,6 +53,10 @@ def _permitir_memoria(clave: str, maximo: int, ventana: int) -> bool:
             return False
         eventos.append(ahora)
         _memoria[clave] = eventos
+        if len(_memoria) > _MAX_CLAVES_MEMORIA:
+            _purgar_memoria(ahora)
+            while len(_memoria) > _MAX_CLAVES_MEMORIA:
+                _memoria.pop(next(iter(_memoria)))
         return True
 
 

@@ -16,11 +16,15 @@ class Settings(BaseSettings):
     OTP_TTL_SECONDS: int = 300
     OTP_RATE_MAX: int = 5
     OTP_RATE_VENTANA: int = 900
+    OTP_IP_RATE_MAX: int = 30
+    IDENT_IP_RATE_MAX: int = 60
     ADMIN_RATE_MAX: int = 10
     ADMIN_RATE_VENTANA: int = 900
     ISLERO_RATE_MAX: int = 10
     ISLERO_RATE_VENTANA: int = 900
-    CORS_ORIGINS: str = "*"
+    SYNC_RATE_MAX: int = 1200
+    SYNC_RATE_VENTANA: int = 60
+    CORS_ORIGINS: str = ""
     API_PREFIX: str = "/fid-api"
     SYNC_API_KEY: str = "dev-api-key"
     SMS_PROVIDER: str = "debug"
@@ -29,11 +33,20 @@ class Settings(BaseSettings):
     SMS_FROM: str = "FidelizacionGLP"
     CATALOGO_PATH: str = "/app/data/catalogo.json"
     TZ_ESTACION: str = "America/Bogota"
+    ASISTENTE_RATE_MAX: int = 20
+    ASISTENTE_RATE_VENTANA: int = 60
+    ASISTENTE_LLM_ENABLED: bool = False
+    ASISTENTE_LLM_BASE_URL: str = "https://api.openai.com/v1"
+    ASISTENTE_LLM_API_KEY: str = ""
+    ASISTENTE_LLM_MODEL: str = ""
+    ASISTENTE_LLM_TIMEOUT: int = 15
+    ASISTENTE_LLM_MAX_TOKENS: int = 400
 
     @property
     def cors_list(self) -> list[str]:
-        if self.CORS_ORIGINS.strip() == "*":
-            return ["*"]
+        # Sin origenes configurados no se permite ninguno (deny por defecto).
+        if self.CORS_ORIGINS.strip() in {"", "*"}:
+            return [] if self.CORS_ORIGINS.strip() == "" else ["*"]
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
 

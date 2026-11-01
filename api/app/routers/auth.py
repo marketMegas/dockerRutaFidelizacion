@@ -6,15 +6,18 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
+from ..deps import ip_cliente
 from ..models import Cliente, Usuario, Vehiculo
 from ..models import utcnow as utcnow_modelo
 from ..schemas import AdminLogin, IdentificarIn, IsleroLogin, OtpRequest, OtpVerify
 from ..security import (
     cedula_valida,
+    comparar_seguro,
     crear_token,
     enmascarar_telefono,
     generar_otp,
     hash_otp,
+    huella_admin,
     normalizar_cedula,
     normalizar_placa,
     placa_valida,
@@ -26,6 +29,7 @@ from ..services import rate_limit, sms
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 MAX_INTENTOS = 5
+ADMIN_TOKEN_HORAS = 2
 PLACA_MSG = "Placa invalida: usa 3 letras y 3 numeros (ej. ABC123)"
 CEDULA_MSG = "Cedula invalida: ingresa solo numeros (6 a 10)"
 
@@ -50,19 +54,20 @@ def _placas(db: Session, cliente: Cliente) -> list[str]:
 
 
 def _client_ip(request: Request) -> str:
-    # Detras del proxy (OpenLiteSpeed) la IP real llega en X-Forwarded-For.
-    reenviado = request.headers.get("x-forwarded-for", "")
-    if reenviado:
-        return reenviado.split(",")[0].strip()
-    return request.client.host if request.client else "desconocido"
+    # Detras del proxy la IP real llega en X-Forwarded-For; se toma el ultimo
+    # valor (el que agrega el proxy) para no confiar en el que envia el cliente.
+    return ip_cliente(request)
 
 
 @router.post("/identificar")
-def identificar(body: IdentificarIn, db: Session = Depends(get_db)):
+def identificar(body: IdentificarIn, request: Request, db: Session = Depends(get_db)):
     placa = normalizar_placa(body.placa)
     if not placa_valida(placa):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, PLACA_MSG)
 
+    ip = _client_ip(request)
+    if not rate_limit.permitir(f"ident-ip:{ip}", settings.IDENT_IP_RATE_MAX, settings.OTP_RATE_VENTANA):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
     if not rate_limit.permitir(f"ident:{placa}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
 
@@ -73,11 +78,14 @@ def identificar(body: IdentificarIn, db: Session = Depends(get_db)):
 
 
 @router.post("/otp/request")
-def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
+def otp_request(body: OtpRequest, request: Request, db: Session = Depends(get_db)):
     placa = normalizar_placa(body.placa)
     if not placa_valida(placa):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, PLACA_MSG)
 
+    ip = _client_ip(request)
+    if not rate_limit.permitir(f"otp-ip:{ip}", settings.OTP_IP_RATE_MAX, settings.OTP_RATE_VENTANA):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
     if not rate_limit.permitir(f"otp:{placa}", settings.OTP_RATE_MAX, settings.OTP_RATE_VENTANA):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
 
@@ -95,15 +103,11 @@ def otp_request(body: OtpRequest, db: Session = Depends(get_db)):
     if cliente is not None:
         if not cliente.activo:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Cliente inactivo")
-        if nombre:
+        # El OTP solo puede viajar al telefono ya registrado. Aceptar uno nuevo
+        # aqui permitia tomar la cuenta ajena conociendo unicamente la placa.
+        telefono_nuevo = ""
+        if nombre and not cliente.nombre:
             cliente.nombre = nombre
-        if telefono_nuevo and telefono_nuevo != cliente.telefono:
-            en_uso = db.scalar(
-                select(Cliente).where(Cliente.telefono == telefono_nuevo, Cliente.id != cliente.id)
-            )
-            if en_uso is not None:
-                raise HTTPException(status.HTTP_409_CONFLICT, "Ese celular ya esta registrado")
-            cliente.telefono = telefono_nuevo
     else:
         # Placa nueva: puede ser un cliente nuevo o una placa nueva de un celular ya registrado
         if telefono_nuevo:
@@ -185,7 +189,7 @@ def otp_verify(body: OtpVerify, db: Session = Depends(get_db)):
     if cliente.otp_attempts >= MAX_INTENTOS:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, solicita un nuevo codigo")
 
-    if hash_otp(placa, body.codigo) != cliente.otp_hash:
+    if not comparar_seguro(hash_otp(placa, body.codigo), cliente.otp_hash):
         cliente.otp_attempts += 1
         db.commit()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Codigo incorrecto")
@@ -226,10 +230,18 @@ def admin_login(body: AdminLogin, request: Request):
     ip = _client_ip(request)
     if not rate_limit.permitir(f"admin:{ip}", settings.ADMIN_RATE_MAX, settings.ADMIN_RATE_VENTANA):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Demasiados intentos, espera unos minutos")
-    if body.usuario != settings.ADMIN_USER or body.password != settings.ADMIN_PASSWORD:
+    if not (
+        comparar_seguro(body.usuario, settings.ADMIN_USER)
+        and comparar_seguro(body.password, settings.ADMIN_PASSWORD)
+    ):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Credenciales invalidas")
     return {
-        "access_token": crear_token(body.usuario, "admin"),
+        "access_token": crear_token(
+            body.usuario,
+            "admin",
+            horas=ADMIN_TOKEN_HORAS,
+            extra={"ver": huella_admin()},
+        ),
         "token_type": "bearer",
         "rol": "admin",
         "nombre": "Administrador",

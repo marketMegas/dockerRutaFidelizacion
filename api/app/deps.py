@@ -1,12 +1,26 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from .database import get_db
 from .models import Cliente, Usuario
-from .security import decodificar_token
+from .security import comparar_seguro, decodificar_token, huella_admin
 
 bearer = HTTPBearer(auto_error=False)
+
+
+def ip_cliente(request: Request) -> str:
+    """IP real del cliente para los limites por IP.
+
+    Se toma el ULTIMO valor de `X-Forwarded-For`: el que agrega el proxy mas
+    cercano. El primero lo controla el cliente y permitia saltarse el
+    rate-limit rotando el header.
+    """
+    reenviado = request.headers.get("x-forwarded-for", "")
+    partes = [p.strip() for p in reenviado.split(",") if p.strip()]
+    if partes:
+        return partes[-1]
+    return request.client.host if request.client else "desconocido"
 
 
 def _payload(cred: HTTPAuthorizationCredentials | None) -> dict:
@@ -22,6 +36,9 @@ def require_admin(cred: HTTPAuthorizationCredentials | None = Depends(bearer)) -
     payload = _payload(cred)
     if payload.get("role") != "admin":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Requiere rol admin")
+    # La huella ata el token a la password vigente: cambiarla revoca los tokens.
+    if not comparar_seguro(str(payload.get("ver") or ""), huella_admin()):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token invalido o expirado")
     return payload
 
 

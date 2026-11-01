@@ -175,3 +175,98 @@ def test_actualizar_cedula_perfil(client):
 
     invalida = client.patch(f"{PREFIX}/clientes/me", json={"cedula": "12345"}, headers=headers)
     assert invalida.status_code == 400
+
+
+def test_no_permite_tomar_cuenta_cambiando_el_celular(client):
+    login_cliente(client, "TST501", "3001112233", "Titular")
+
+    resp = client.post(
+        f"{PREFIX}/auth/otp/request",
+        json={"placa": "TST501", "telefono": "3999998888", "nombre": "Atacante"},
+    )
+    assert resp.status_code == 200, resp.text
+    # El OTP viaja al numero ya registrado, no al que envia el atacante.
+    assert resp.json()["telefono_parcial"] == "****2233"
+
+    verify = client.post(f"{PREFIX}/auth/otp/verify", json={"placa": "TST501", "codigo": resp.json()["debug_codigo"]})
+    assert verify.status_code == 200, verify.text
+    assert verify.json()["cliente"]["telefono"] == "3001112233"
+    assert verify.json()["cliente"]["nombre"] == "Titular"
+
+
+def test_rate_limit_admin_no_se_salta_con_x_forwarded_for(client, monkeypatch):
+    from app.config import settings
+    from app.services import rate_limit
+
+    rate_limit._memoria.clear()
+    rate_limit._cliente = None
+    rate_limit._inicializado = True
+    monkeypatch.setattr(settings, "ADMIN_RATE_MAX", 2)
+
+    malas = {"usuario": "admin", "password": "incorrecta"}
+    assert client.post(f"{PREFIX}/auth/admin", json=malas, headers={"X-Forwarded-For": "1.1.1.1, 9.9.9.9"}).status_code == 401
+    assert client.post(f"{PREFIX}/auth/admin", json=malas, headers={"X-Forwarded-For": "2.2.2.2, 9.9.9.9"}).status_code == 401
+    # El primer valor del header es del cliente: no debe abrir un bucket nuevo.
+    assert client.post(f"{PREFIX}/auth/admin", json=malas, headers={"X-Forwarded-For": "3.3.3.3, 9.9.9.9"}).status_code == 429
+
+
+def test_password_vacia_no_autentica(client, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "ADMIN_PASSWORD", "")
+    resp = client.post(f"{PREFIX}/auth/admin", json={"usuario": "admin", "password": ""})
+    assert resp.status_code == 401, resp.text
+
+
+def test_sync_rechaza_api_key_vacia(client, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "SYNC_API_KEY", "")
+    venta = {
+        "id_externo": "SYNC-KEY-VACIA",
+        "volumen_litros": 10,
+        "monto": 20000,
+    }
+    resp = client.post(f"{PREFIX}/sync/venta", json=venta, headers={"X-API-Key": ""})
+    assert resp.status_code == 401, resp.text
+
+
+def test_cambiar_password_admin_revoca_tokens(client, admin_headers, monkeypatch):
+    from app.config import settings
+
+    assert client.get(f"{PREFIX}/admin/resumen", headers=admin_headers).status_code == 200
+    monkeypatch.setattr(settings, "ADMIN_PASSWORD", "otra-clave-larga-123")
+    assert client.get(f"{PREFIX}/admin/resumen", headers=admin_headers).status_code == 401
+
+
+def test_configuracion_insegura_falla_en_produccion(monkeypatch):
+    from app.config import settings
+    from app.security import validar_configuracion_produccion
+
+    monkeypatch.setattr(settings, "DEBUG", False)
+    monkeypatch.setattr(settings, "SECRET_KEY", "cambiar_por_openssl_rand_base64_48")
+    monkeypatch.setattr(settings, "ADMIN_PASSWORD", "admin123")
+    monkeypatch.setattr(settings, "SYNC_API_KEY", "dev-api-key")
+    monkeypatch.setattr(settings, "CORS_ORIGINS", "*")
+    monkeypatch.setattr(settings, "SMS_PROVIDER", "debug")
+
+    try:
+        validar_configuracion_produccion()
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("La configuracion insegura deberia abortar el arranque")
+
+
+def test_configuracion_segura_arranca_en_produccion(monkeypatch):
+    from app.config import settings
+    from app.security import validar_configuracion_produccion
+
+    monkeypatch.setattr(settings, "DEBUG", False)
+    monkeypatch.setattr(settings, "SECRET_KEY", "x" * 48)
+    monkeypatch.setattr(settings, "ADMIN_PASSWORD", "clave-admin-segura")
+    monkeypatch.setattr(settings, "SYNC_API_KEY", "clave-sync-de-32-caracteres-000001")
+    monkeypatch.setattr(settings, "CORS_ORIGINS", "https://fidelizacion.megas.com.co")
+    monkeypatch.setattr(settings, "SMS_PROVIDER", "http")
+
+    validar_configuracion_produccion()

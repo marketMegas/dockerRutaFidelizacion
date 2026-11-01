@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# El .env y los respaldos contienen secretos y datos personales.
+umask 077
+
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$APP_DIR/docker-compose.prod.yml"
 ENV_FILE="$APP_DIR/.env"
@@ -8,16 +11,20 @@ ACCION="${1:-up}"
 
 cd "$APP_DIR"
 
+#si hay env lo usa de lo contrario crea uno nuevo con valores por defecto y SECRET_KEY aleatoria 
+
 preparar_env() {
   if [ ! -f "$ENV_FILE" ]; then
     cp .env.example .env
     local secret
-    secret="$(openssl rand -base64 48 | tr -d '\n/+=+')"
+    secret="$(openssl rand -hex 32)"
     sed -i "s|^SECRET_KEY=.*|SECRET_KEY=${secret}|" .env
     sed -i "s|^DEBUG=.*|DEBUG=False|" .env
+    chmod 600 "$ENV_FILE"
     echo ">> Creado .env nuevo con SECRET_KEY aleatoria."
-    echo ">> IMPORTANTE: edita .env y cambia SYNC_API_KEY, POSTGRES_PASSWORD y ADMIN_PASSWORD."
+    echo ">> IMPORTANTE: edita .env y cambia SYNC_API_KEY, POSTGRES_PASSWORD, ADMIN_PASSWORD y SMS_PROVIDER."
   else
+    chmod 600 "$ENV_FILE"
     echo ">> Usando .env existente."
   fi
 }
@@ -34,7 +41,8 @@ cargar_env() {
 validar_env() {
   local faltantes=()
   local var
-  for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL REDIS_URL SECRET_KEY ESTACION_ID; do
+  for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL REDIS_URL \
+    SECRET_KEY ADMIN_USER ADMIN_PASSWORD SYNC_API_KEY CORS_ORIGINS SMS_PROVIDER ESTACION_ID; do
     if [ -z "${!var:-}" ]; then
       faltantes+=("$var")
     fi
@@ -45,14 +53,43 @@ validar_env() {
   fi
 
   local inseguras=()
-  [ "${SECRET_KEY:-}" = "secretkeyReemplazarEnProduccion" ] && inseguras+=("SECRET_KEY")
-  [ "${POSTGRES_PASSWORD:-}" = "fidelizacion" ] && inseguras+=("POSTGRES_PASSWORD")
-  [ "${ADMIN_PASSWORD:-}" = "admin123" ] && inseguras+=("ADMIN_PASSWORD")
-  [ "${SYNC_API_KEY:-}" = "dev-api-key" ] && inseguras+=("SYNC_API_KEY")
-  [ "${CORS_ORIGINS:-}" = "*" ] && inseguras+=("CORS_ORIGINS")
-  [ "${DEBUG:-False}" = "True" ] && inseguras+=("DEBUG")
+  local secret="${SECRET_KEY:-}"
+  local admin="${ADMIN_PASSWORD:-}"
+  local sync="${SYNC_API_KEY:-}"
+  local cors="${CORS_ORIGINS:-}"
+  local sms
+  sms="$(printf '%s' "${SMS_PROVIDER:-}" | tr '[:upper:]' '[:lower:]')"
+  local debug
+  debug="$(printf '%s' "${DEBUG:-False}" | tr '[:upper:]' '[:lower:]')"
+
+  if [ "$secret" = "cambiar_por_openssl_rand_base64_48" ] || [ "$secret" = "secretkeyReemplazarEnProduccion" ]; then
+    inseguras+=("SECRET_KEY (valor de plantilla)")
+  fi
+  if [ ${#secret} -lt 32 ]; then
+    inseguras+=("SECRET_KEY (menos de 32 caracteres)")
+  fi
+  if [ "$admin" = "admin123" ] || [ ${#admin} -lt 10 ]; then
+    inseguras+=("ADMIN_PASSWORD (plantilla o menos de 10 caracteres)")
+  fi
+  if [ "${POSTGRES_PASSWORD:-}" = "fidelizacion" ]; then
+    inseguras+=("POSTGRES_PASSWORD (valor de plantilla)")
+  fi
+  if [ "$sync" = "dev-api-key" ] || [ ${#sync} -lt 16 ]; then
+    inseguras+=("SYNC_API_KEY (plantilla o menos de 16 caracteres)")
+  fi
+  if [ "$cors" = "*" ]; then
+    inseguras+=("CORS_ORIGINS (no puede ser *)")
+  fi
+  case "$debug" in
+    true | 1 | yes | on) inseguras+=("DEBUG (debe ser False)") ;;
+  esac
+  if [ "$sms" = "debug" ]; then
+    inseguras+=("SMS_PROVIDER (debe ser 'http' en produccion)")
+  fi
+
   if [ ${#inseguras[@]} -gt 0 ]; then
-    echo ">> ERROR: cambia estos valores de plantilla en .env antes de desplegar: ${inseguras[*]}" >&2
+    echo ">> ERROR: corrige estos valores de .env antes de desplegar:" >&2
+    printf '   - %s\n' "${inseguras[@]}" >&2
     exit 1
   fi
 }
@@ -96,8 +133,10 @@ case "$ACCION" in
     mkdir -p backups
     stamp="$(date +%Y%m%d-%H%M%S)"
     docker compose -f "$COMPOSE_FILE" exec -T db pg_dump -U "${POSTGRES_USER:-fidelizacion}" "${POSTGRES_DB:-fidelizacion}" > "backups/fidelizacion-${stamp}.sql"
+    chmod 600 "backups/fidelizacion-${stamp}.sql"
     echo ">> Respaldo en backups/fidelizacion-${stamp}.sql"
     if docker compose -f "$COMPOSE_FILE" exec -T api sh -c 'cat "${CATALOGO_PATH:-/app/data/catalogo.json}"' > "backups/catalogo-${stamp}.json"; then
+      chmod 600 "backups/catalogo-${stamp}.json"
       echo ">> Catalogo respaldado en backups/catalogo-${stamp}.json"
     else
       rm -f "backups/catalogo-${stamp}.json"
