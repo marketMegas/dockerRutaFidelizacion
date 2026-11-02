@@ -133,7 +133,7 @@ export default function App() {
         </nav>
       )}
 
-      {logueado && <ChatbotWidget cliente={cliente} />}
+      {logueado && <ChatbotWidget cliente={cliente} onNavegar={setVista} />}
     </div>
   )
 }

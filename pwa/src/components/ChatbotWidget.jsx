@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { api, fmtFecha, fmtPuntos } from '../api.js'
+import { useEffect, useRef, useState } from 'react'
+import { api, fmtPuntos } from '../api.js'
 import './ChatbotWidget.css'
 
 const SUGERENCIAS = [
   '¿Cuántos puntos tengo?',
-  '¿Cuánto he redimido?',
+  '¿Qué premios puedo canjear?',
+  '¿Cuánto me falta para subir de nivel?',
   '¿Qué he canjeado?',
-  '¿Cuál es mi nivel?',
-  '¿Puedo canjear?',
+  '¿Dónde veo mi código?',
 ]
 
 function normalizar(texto) {
@@ -18,157 +18,120 @@ function normalizar(texto) {
     .trim()
 }
 
-function detectarIntent(pregunta) {
-  const t = normalizar(pregunta)
+function respuestaLocal(texto, cliente) {
+  const t = normalizar(texto)
+  const puntos = fmtPuntos(cliente?.puntos ?? 0)
+  const nivel = cliente?.nivel?.nombre
 
-  if (t.includes('ayuda') || t.includes('hola') || t.includes('como usar') || t === '') {
-    return 'ayuda'
-  }
   if (t.includes('nivel')) {
-    return 'nivel'
+    return nivel
+      ? `Estás en nivel **${nivel}**. No pude conectar con el asistente; intenta de nuevo para ver tu avance.`
+      : 'No pude conectar con el asistente. Intenta de nuevo en un momento.'
   }
-  if (t.includes('puedo canjear') || t.includes('cuando puedo canjear')) {
-    return 'puedo_canjear'
+  if (t.includes('punto') || t.includes('saldo')) {
+    return `Tienes **${puntos} puntos** disponibles. No pude conectar con el asistente para más detalles.`
   }
-  if ((t.includes('que') && (t.includes('canje') || t.includes('he canjeado'))) || t.includes('mis canjes') || t.includes('premios que')) {
-    return 'lista_canjes'
-  }
-  if (t.includes('redimid') || t.includes('gastad') || (t.includes('cuanto') && t.includes('he')) || (t.includes('puntos') && (t.includes('redim') || t.includes('usad')))) {
-    return 'redimidos_total'
-  }
-  if ((t.includes('cuanto') || t.includes('cuantos')) && t.includes('punto')) {
-    return 'saldo'
-  }
-  if (t.includes('punto') && !t.includes('redim') && !t.includes('gast')) {
-    return 'saldo'
-  }
-  return 'desconocido'
+  return `No pude conectar con el asistente. Revisa tu conexión e intenta de nuevo. Tu saldo actual es **${puntos} puntos**.`
 }
 
-export default function ChatbotWidget({ cliente }) {
+export default function ChatbotWidget({ cliente, onNavegar }) {
   const [abierto, setAbierto] = useState(false)
   const [mensajes, setMensajes] = useState([])
   const [entrada, setEntrada] = useState('')
   const [cargando, setCargando] = useState(false)
-  const [misCanjes, setMisCanjes] = useState([])
-  const [cargadosCanjes, setCargadosCanjes] = useState(false)
+  const [error, setError] = useState('')
   const listaRef = useRef(null)
-
-  const puntos = cliente?.puntos ?? 0
-  const nivel = cliente?.nivel
+  const inputRef = useRef(null)
 
   useEffect(() => {
     if (listaRef.current) {
       listaRef.current.scrollTop = listaRef.current.scrollHeight
     }
-  }, [mensajes])
+  }, [mensajes, cargando, error])
 
   useEffect(() => {
-    if (abierto && !cargadosCanjes && cliente) {
-      setCargando(true)
-      api('/canjes/mis')
-        .then((data) => {
-          setMisCanjes(Array.isArray(data) ? data : [])
-          setCargadosCanjes(true)
-        })
-        .catch(() => {
-          setMisCanjes([])
-          setCargadosCanjes(true)
-        })
-        .finally(() => setCargando(false))
+    if (!abierto) return
+    const cerrarConEscape = (e) => {
+      if (e.key === 'Escape') setAbierto(false)
     }
-  }, [abierto, cargadosCanjes, cliente])
+    document.addEventListener('keydown', cerrarConEscape)
+    const foco = setTimeout(() => inputRef.current?.focus(), 150)
+    return () => {
+      document.removeEventListener('keydown', cerrarConEscape)
+      clearTimeout(foco)
+    }
+  }, [abierto])
 
-  const totalRedimido = useMemo(() => {
-    return misCanjes.reduce((acc, c) => acc + (Number(c.puntos_costo) || 0), 0)
-  }, [misCanjes])
-
-  function agregarMensaje(autor, texto) {
-    setMensajes((prev) => [...prev, { id: Date.now() + Math.random(), autor, texto, ts: new Date() }])
+  function agregarMensaje(autor, texto, acciones = []) {
+    setMensajes((prev) => [
+      ...prev,
+      { id: Date.now() + Math.random(), autor, texto, acciones, ts: new Date() },
+    ])
   }
 
-  function responder(pregunta) {
-    const intent = detectarIntent(pregunta)
-    if (intent === 'ayuda') {
-      return 'Puedo ayudarte con: puntos disponibles, puntos redimidos, mis canjes, nivel y si puedes canjear. Elige una sugerencia o escribe tu pregunta.'
+  function saludo() {
+    const nombre = cliente?.nombre?.trim().split(' ')[0]
+    const nivel = cliente?.nivel?.nombre
+    const inicio = nombre ? `Hola, ${nombre}.` : 'Hola.'
+    const nivelTexto = nivel ? ` y estás en nivel **${nivel}**` : ''
+    return `${inicio} Tienes **${fmtPuntos(cliente?.puntos ?? 0)} puntos**${nivelTexto}. ¿En qué te puedo ayudar?`
+  }
+
+  function toggle() {
+    const nuevo = !abierto
+    setAbierto(nuevo)
+    if (nuevo && mensajes.length === 0) {
+      setTimeout(() => agregarMensaje('bot', saludo()), 200)
     }
-    if (intent === 'nivel') {
-      if (nivel) {
-        if (typeof nivel === 'object') {
-          return `Tu nivel actual es **${nivel.nombre || 'Sin nivel'}**${nivel.multiplicador ? ` (multiplicador x${nivel.multiplicador})` : ''}.`
-        }
-        return `Tu nivel actual es **${nivel}**.`
-      }
-      return 'No tengo información de tu nivel en este momento.'
+  }
+
+  async function enviarTexto(texto) {
+    const limpio = texto.trim()
+    if (!limpio || cargando) return
+
+    const historial = mensajes.slice(-8).map((m) => ({
+      rol: m.autor === 'usuario' ? 'usuario' : 'asistente',
+      texto: m.texto,
+    }))
+
+    agregarMensaje('usuario', limpio)
+    setEntrada('')
+    setError('')
+    setCargando(true)
+
+    try {
+      const data = await api('/asistente/consulta', {
+        method: 'POST',
+        body: { mensaje: limpio, historial },
+      })
+      agregarMensaje('bot', data.respuesta, data.acciones || [])
+    } catch (e) {
+      agregarMensaje('bot', respuestaLocal(limpio, cliente))
+      setError(e.message)
+    } finally {
+      setCargando(false)
     }
-    if (intent === 'saldo') {
-      return `Tienes **${fmtPuntos(puntos)}** puntos disponibles.`
-    }
-    if (intent === 'redimidos_total') {
-      if (misCanjes.length === 0) {
-        return 'Aún no has redimido ningún premio. Tienes **' + fmtPuntos(puntos) + '** puntos disponibles.'
-      }
-      return `Has redimido **${fmtPuntos(totalRedimido)}** puntos en **${misCanjes.length}** canje${misCanjes.length === 1 ? '' : 's'}.`
-    }
-    if (intent === 'lista_canjes') {
-      if (misCanjes.length === 0) {
-        return 'Aún no has canjeado premios. Puedes ver las recompensas disponibles en la sección Recompensas.'
-      }
-      const ultimos = misCanjes.slice(0, 5)
-      const lineas = ultimos.map((c) => `- ${c.premio || c.premio_nombre} · ${fmtPuntos(c.puntos_costo)} pts · ${fmtFecha(c.created_at)}`)
-      return `Tus últimos canjes:\n${lineas.join('\n')}${misCanjes.length > 5 ? `\n... y ${misCanjes.length - 5} más` : ''}`
-    }
-    if (intent === 'puedo_canjear') {
-      if (puntos <= 0) {
-        return 'No tienes puntos suficientes para canjear en este momento.'
-      }
-      return `Sí puedes canjear. Tienes **${fmtPuntos(puntos)}** puntos. Revisa las recompensas disponibles para ver qué premios se ajustan a tu saldo.`
-    }
-    return 'No entendí tu pregunta. Prueba con alguna de estas: "¿Cuántos puntos tengo?", "¿Cuánto he redimido?", "¿Qué he canjeado?", "¿Cuál es mi nivel?".'
   }
 
   function enviar(e) {
     e.preventDefault()
-    const texto = entrada.trim()
-    if (!texto || cargando) return
-    agregarMensaje('usuario', texto)
-    setEntrada('')
-    setCargando(true)
-    setTimeout(() => {
-      const resp = responder(texto)
-      agregarMensaje('bot', resp)
-      setCargando(false)
-    }, 300)
+    enviarTexto(entrada)
   }
 
   function usarSugerencia(s) {
-    if (cargando) return
-    agregarMensaje('usuario', s)
-    setCargando(true)
-    setTimeout(() => {
-      const resp = responder(s)
-      agregarMensaje('bot', resp)
-      setCargando(false)
-    }, 250)
+    enviarTexto(s)
   }
 
-  function toggle() {
-    setAbierto((v) => {
-      const nuevo = !v
-      if (nuevo && mensajes.length === 0) {
-        setTimeout(() => {
-          agregarMensaje('bot', 'Hola! Soy tu asistente de puntos. Pregúntame sobre tus puntos, redenciones o nivel.')
-        }, 200)
-      }
-      return nuevo
-    })
+  function navegar(accion) {
+    if (!accion?.vista) return
+    setAbierto(false)
+    onNavegar?.(accion.vista)
   }
 
   function limpiarChat() {
     setMensajes([])
-    setTimeout(() => {
-      agregarMensaje('bot', 'Chat limpio. ¿En qué te puedo ayudar?')
-    }, 150)
+    setError('')
+    setTimeout(() => agregarMensaje('bot', saludo()), 150)
   }
 
   if (!cliente) return null
@@ -176,7 +139,7 @@ export default function ChatbotWidget({ cliente }) {
   return (
     <>
       {!abierto && (
-        <button className="chatbot-fab" onClick={toggle} aria-label="Abrir asistente de puntos">
+        <button className="chatbot-fab" onClick={toggle} aria-label="Abrir Chatbot de Ayuda">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
@@ -187,10 +150,15 @@ export default function ChatbotWidget({ cliente }) {
         <div className="chatbot-widget">
           <div className="chatbot-header">
             <div className="chatbot-header-info">
-              <div className="chatbot-avatar">🤖</div>
+              <div className="chatbot-avatar" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z"></path>
+                  <path d="M12 8.2l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z"></path>
+                </svg>
+              </div>
               <div>
-                <div className="chatbot-title">Asistente de Puntos</div>
-                <div className="chatbot-subtitle">Solo para consultas</div>
+                <div className="chatbot-title">Chatbot de Ayuda</div>
+                <div className="chatbot-subtitle">Consultas de tu cuenta</div>
               </div>
             </div>
             <div className="chatbot-header-actions">
@@ -209,20 +177,36 @@ export default function ChatbotWidget({ cliente }) {
             </div>
           </div>
 
-          <div className="chatbot-mensajes" ref={listaRef}>
+          <div className="chatbot-mensajes" ref={listaRef} role="log" aria-live="polite">
             {mensajes.map((m) => (
               <div key={m.id} className={`chatbot-mensaje chatbot-mensaje--${m.autor}`}>
-                <div className="chatbot-mensaje-burbuja">
-                  {m.texto.split('\n').map((linea, idx) => (
-                    <div key={idx}>
-                      {linea.split(/(\*\*.*?\*\*)/).map((parte, i) => {
-                        if (parte.startsWith('**') && parte.endsWith('**')) {
-                          return <strong key={i}>{parte.slice(2, -2)}</strong>
-                        }
-                        return parte
-                      })}
+                <div className="chatbot-mensaje-bloque">
+                  <div className="chatbot-mensaje-burbuja">
+                    {m.texto.split('\n').map((linea, idx) => (
+                      <div key={idx}>
+                        {linea.split(/(\*\*.*?\*\*)/).map((parte, i) => {
+                          if (parte.startsWith('**') && parte.endsWith('**')) {
+                            return <strong key={i}>{parte.slice(2, -2)}</strong>
+                          }
+                          return parte
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                  {m.acciones?.length > 0 && (
+                    <div className="chatbot-acciones">
+                      {m.acciones.map((a) => (
+                        <button
+                          key={`${a.vista}-${a.label}`}
+                          type="button"
+                          className="chatbot-accion"
+                          onClick={() => navegar(a)}
+                        >
+                          {a.label}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             ))}
@@ -235,9 +219,10 @@ export default function ChatbotWidget({ cliente }) {
                 </div>
               </div>
             )}
+            {error && <p className="chatbot-error">{error}</p>}
           </div>
 
-          {mensajes.length === 0 && (
+          {!mensajes.some((m) => m.autor === 'usuario') && (
             <div className="chatbot-sugerencias">
               {SUGERENCIAS.map((s) => (
                 <button key={s} className="chatbot-sugerencia" onClick={() => usarSugerencia(s)}>
@@ -249,11 +234,14 @@ export default function ChatbotWidget({ cliente }) {
 
           <form className="chatbot-form" onSubmit={enviar}>
             <input
+              ref={inputRef}
               className="chatbot-input"
               type="text"
               value={entrada}
               onChange={(e) => setEntrada(e.target.value)}
               placeholder="Escribe tu pregunta..."
+              aria-label="Escribe tu pregunta"
+              maxLength={500}
               disabled={cargando}
             />
             <button className="chatbot-enviar" type="submit" disabled={cargando || !entrada.trim()} aria-label="Enviar">
