@@ -40,6 +40,7 @@ export default function ChatbotWidget({ cliente, onNavegar }) {
   const [entrada, setEntrada] = useState('')
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(true)
   const listaRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -95,6 +96,7 @@ export default function ChatbotWidget({ cliente, onNavegar }) {
     }))
 
     agregarMensaje('usuario', limpio)
+    setMostrarSugerencias(false)
     setEntrada('')
     setError('')
     setCargando(true)
@@ -124,13 +126,20 @@ export default function ChatbotWidget({ cliente, onNavegar }) {
 
   function navegar(accion) {
     if (!accion?.vista) return
-    setAbierto(false)
     onNavegar?.(accion.vista)
+    setMostrarSugerencias(true)
+    setTimeout(() => inputRef.current?.focus(), 100)
+  }
+
+  function mostrarMasPreguntas() {
+    setMostrarSugerencias(true)
+    inputRef.current?.focus()
   }
 
   function limpiarChat() {
     setMensajes([])
     setError('')
+    setMostrarSugerencias(true)
     setTimeout(() => agregarMensaje('bot', saludo()), 150)
   }
 
@@ -143,6 +152,7 @@ export default function ChatbotWidget({ cliente, onNavegar }) {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
+          <span className="chatbot-fab-label">Chatbot de Ayuda</span>
         </button>
       )}
 
@@ -222,7 +232,15 @@ export default function ChatbotWidget({ cliente, onNavegar }) {
             {error && <p className="chatbot-error">{error}</p>}
           </div>
 
-          {!mensajes.some((m) => m.autor === 'usuario') && (
+          {!mostrarSugerencias && !cargando && (
+            <div className="chatbot-mas">
+              <button type="button" className="chatbot-mas-btn" onClick={mostrarMasPreguntas}>
+                Hacer otra pregunta
+              </button>
+            </div>
+          )}
+
+          {mostrarSugerencias && !cargando && (
             <div className="chatbot-sugerencias">
               {SUGERENCIAS.map((s) => (
                 <button key={s} className="chatbot-sugerencia" onClick={() => usarSugerencia(s)}>
