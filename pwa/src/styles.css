@@ -10,7 +10,7 @@
   --menta: #3af3b0;
   --lima: #5bf300;
   --azul-hondo: #082770;
-  --placa: #3af3b0;
+  --placa: #facc15;
   --placa-tinta: #082770;
   --marca: #073edb;
   --peligro: #c0392b;
@@ -219,7 +219,7 @@ h2::after {
 }
 
 .navbar .sesion.primario:hover {
-  background: var(--placa);
+  background: var(--menta);
   color: var(--placa-tinta);
 }
 
@@ -492,7 +492,7 @@ h2::after {
 }
 
 .tabs button.activo:focus-visible {
-  outline-color: var(--placa);
+  outline-color: var(--menta);
 }
 
 /* ---------- Pasos (Funcionamiento) ---------- */
@@ -1452,7 +1452,7 @@ button.primario:active {
   background: var(--papel);
   border: 1px solid var(--linea);
   border-radius: var(--radius-panel);
-  border-top: 4px solid var(--placa);
+  border-top: 4px solid var(--menta);
   padding: 1.1rem;
   display: flex;
   flex-direction: column;

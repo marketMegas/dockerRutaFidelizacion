@@ -165,6 +165,7 @@ export default function Clientes() {
           </ul>
           <form className="fila" onSubmit={agregarPlaca}>
             <input
+              className="input-placa"
               placeholder="ABC123"
               value={nuevaPlaca}
               onChange={(e) => setNuevaPlaca(e.target.value.toUpperCase())}
