@@ -1,0 +1,51 @@
+{
+	admin off
+	auto_https off
+}
+
+https://prueba-fidelizacion.megas.com.co:8443 {
+	tls /etc/caddy/tls/prueba.crt /etc/caddy/tls/prueba.key
+
+	route {
+		# Login/OTP de los frontends: pasan sin Basic (los protege OTP/credenciales).
+		handle /fid-api/auth/* {
+			reverse_proxy api:8000
+		}
+
+		# Llamadas ya autenticadas de PWA/panel (JWT): la API valida el token.
+		@api_bearer {
+			path /fid-api/*
+			header Authorization "Bearer *"
+		}
+		handle @api_bearer {
+			reverse_proxy api:8000
+		}
+
+		# API directa (navegador/Swagger/curl): exige usuario/contraseña.
+		handle /fid-api/* {
+			basic_auth {
+				prueba_fid $2b$14$R5.S4ficqn5CaQFFz/R.Gel7WF8cWlGpJ8w487bub4eVr3cOaCfTq
+			}
+			reverse_proxy api:8000
+		}
+
+		# Panel: SIN Basic Auth (solo su propio login de la app).
+		handle /panel/* {
+			reverse_proxy panel:80
+		}
+
+		# PWA: pide contrasena solo al entrar (documento inicial).
+		@entrada path / /index.html
+		handle @entrada {
+			basic_auth {
+				prueba_fid $2b$14$R5.S4ficqn5CaQFFz/R.Gel7WF8cWlGpJ8w487bub4eVr3cOaCfTq
+			}
+			reverse_proxy pwa:80
+		}
+
+		# Resto de la PWA (assets, manifest, sw, rutas internas): sin prompt.
+		handle {
+			reverse_proxy pwa:80
+		}
+	}
+}

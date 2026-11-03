@@ -1,6 +1,7 @@
 # Entornos y secretos
 .env
 .env.local
+.env.prueba
 *.env.produccion
 
 # Python
@@ -34,6 +35,10 @@ connector-zencillo/*.log
 connector-zencillo/*.procesados.json
 connector-zencillo/ventas_zencillo.csv
 connector-zencillo/datos/
+
+# TLS / certificados y estado de certbot (instancia de prueba)
+.auth/
+.certbot/
 
 # Respaldos y volcados
 backups/

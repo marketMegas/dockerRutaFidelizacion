@@ -1,0 +1,122 @@
+name: fidelizacion-glp-prueba
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fidelizacion}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fidelizacion}
+      POSTGRES_DB: ${POSTGRES_DB:-fidelizacion}
+    volumes:
+      - datos_db:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fidelizacion} -d ${POSTGRES_DB:-fidelizacion}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - datos_redis:/data
+    ports:
+      - "127.0.0.1:6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    env_file: .env.prueba
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://fidelizacion:fidelizacion@db:5432/fidelizacion}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CATALOGO_PATH: ${CATALOGO_PATH:-/app/data/catalogo.json}
+      TZ_ESTACION: ${TZ_ESTACION:-America/Bogota}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - datos_catalogo:/app/data
+    ports:
+      - "127.0.0.1:8003:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  panel:
+    build: ./panel
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5141:80"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/panel/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  pwa:
+    build: ./pwa
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5142:80"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  connector:
+    build: ./connector-zencillo
+    restart: unless-stopped
+    profiles: ["conector"]
+    env_file: .env.prueba
+    environment:
+      FID_API_URL: http://api:8000/fid-api
+      ESTACION_ID: ${ESTACION_ID:-EDS-01}
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - datos_conector:/app/datos
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+      panel:
+        condition: service_healthy
+      pwa:
+        condition: service_healthy
+    ports:
+      - "0.0.0.0:8443:8443"
+    volumes:
+      - ./deploy/Caddyfile.prueba:/etc/caddy/Caddyfile:ro
+      - ./.auth:/etc/caddy/tls:ro
+
+volumes:
+  datos_db:
+  datos_redis:
+  datos_catalogo:
+  datos_conector:
