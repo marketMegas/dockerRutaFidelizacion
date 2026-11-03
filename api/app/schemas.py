@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -119,10 +120,11 @@ class ReversoIn(BaseModel):
     motivo: str = "reverso manual"
 
 
-class ChatMessageIn(BaseModel):
-    mensaje: str = Field(..., min_length=1, max_length=500)
+class AsistenteMensajeIn(BaseModel):
+    rol: Literal["usuario", "asistente"]
+    texto: str = Field(min_length=1, max_length=500)
 
 
-class ChatMessageOut(BaseModel):
-    respuesta: str
-    sugerencias: list[str] = []
+class AsistenteIn(BaseModel):
+    mensaje: str = Field(min_length=1, max_length=500)
+    historial: list[AsistenteMensajeIn] = Field(default_factory=list, max_length=10)

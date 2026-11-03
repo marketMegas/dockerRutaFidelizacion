@@ -153,6 +153,7 @@ export default function IsleroRegistro() {
           <label>
             Placa del vehículo
             <input
+              className="input-placa"
               placeholder="ABC123"
               autoComplete="off"
               autoCapitalize="characters"

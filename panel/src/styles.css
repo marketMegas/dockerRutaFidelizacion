@@ -536,16 +536,20 @@ tbody tr:hover td {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: #e3f1dc;
+  background: #facc15;
   border-radius: 999px;
   padding: 0.25rem 0.4rem 0.25rem 0.75rem;
   font-size: 0.85rem;
 }
 
+.placas-cliente li.muted {
+  background: transparent;
+}
+
 .placas-cliente li button {
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: #7c4a00;
   cursor: pointer;
   font-size: 0.78rem;
 }
@@ -692,6 +696,20 @@ tbody tr:hover td {
   color: rgba(23, 51, 28, 0.55);
 }
 
+.input-placa {
+  background: #facc15;
+  border-color: #d4a800;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.input-placa:focus {
+  outline-color: #b58900;
+  border-color: #b58900;
+}
+
 .islero-form .acciones {
   grid-column: 1 / -1;
   display: flex;
@@ -707,118 +725,6 @@ tbody tr:hover td {
 .islero-form .ok {
   grid-column: 1 / -1;
   margin: 0;
-}
-
-/* Tema del modulo de isleros: naranja corporativo sobre superficies claras */
-.tema-islero {
-  --green: #f6811e;
-  --green-2: #f79542;
-  --green-3: #a8540a;
-  --line: #f0d9c6;
-  --shadow: 0 1px 2px rgba(246, 129, 30, 0.12), 0 8px 24px -12px rgba(246, 129, 30, 0.3);
-}
-
-.tema-islero .sidebar {
-  color: #2a1a08;
-}
-
-.tema-islero .brand {
-  color: #2a1a08;
-  border-bottom-color: rgba(42, 26, 8, 0.3);
-}
-
-.tema-islero .brand span {
-  color: #fff;
-}
-
-.tema-islero .sidebar nav button {
-  background: transparent;
-  color: rgba(42, 26, 8, 0.82);
-}
-
-.tema-islero .sidebar nav button:hover,
-.tema-islero .sidebar nav button.activo {
-  background: var(--green-2);
-  color: #2a1a08;
-}
-
-.tema-islero .sidebar nav button.activo {
-  border-left-color: #2a1a08;
-}
-
-.tema-islero .salir {
-  background: transparent;
-  color: #2a1a08;
-  border-color: rgba(42, 26, 8, 0.5);
-}
-
-.tema-islero .salir:hover {
-  border-color: #2a1a08;
-}
-
-.tema-islero .sidebar-usuario {
-  color: rgba(42, 26, 8, 0.72);
-}
-
-.tema-islero button {
-  background: #5bf300;
-  border-color: #3fae00;
-  color: #17331c;
-}
-
-.tema-islero button:hover {
-  background: #7cff3a;
-  border-color: #3fae00;
-  color: #17331c;
-}
-
-.tema-islero form.fila button:hover,
-.tema-islero .login button:hover {
-  background: #7cff3a;
-  color: #17331c;
-}
-
-.tema-islero .login button {
-  background: #5bf300;
-  border-color: #3fae00;
-  color: #17331c;
-}
-
-.tema-islero th {
-  background: #fdf0e4;
-  color: var(--green-3);
-}
-
-.tema-islero tbody tr:hover td {
-  background: #fff8f1;
-}
-
-.tema-islero .ok {
-  background: #fdf0e4;
-  color: var(--green-3);
-  border-color: var(--line);
-}
-
-.tema-islero .login-tabs button {
-  background: #fdf0e4;
-  border-color: var(--line);
-  color: var(--text);
-}
-
-.tema-islero .login-tabs button:hover {
-  background: #fbe3cf;
-  color: var(--text);
-}
-
-.tema-islero .login-tabs button.activo,
-.tema-islero .login-tabs button.activo:hover {
-  background: var(--green);
-  border-color: var(--green-3);
-  color: #2a1a08;
-}
-
-.tema-islero.login {
-  background: radial-gradient(1200px 600px at 80% -10%, #f79542 0%, #f6811e 55%);
 }
 
 @media (max-width: 760px) {
@@ -1039,4 +945,102 @@ tbody tr:hover td {
     padding: 0.4rem 0.6rem;
     font-size: 0.85rem;
   }
+}
+
+/* ---------- Modulo de isleros: acentos naranja de la paleta ---------- */
+
+.layout-islero .sidebar {
+  background: var(--orange);
+}
+
+.layout-islero .brand span {
+  color: #fff;
+}
+
+.layout-islero .sidebar nav button:hover {
+  background: var(--orange-2);
+  color: #fff;
+}
+
+.layout-islero .sidebar nav button.activo {
+  background: var(--orange-2);
+  color: #fff;
+  border-left-color: #fff;
+}
+
+.layout-islero .salir:hover {
+  border-color: #fff;
+}
+
+.layout-islero .contenido button {
+  background: var(--orange-2);
+  border-color: var(--orange-2);
+  color: #fff;
+}
+
+.layout-islero .contenido button:hover {
+  background: var(--orange);
+  border-color: var(--orange-2);
+  color: var(--text);
+}
+
+.layout-islero .contenido input:not(.input-placa):focus {
+  outline-color: var(--orange-2);
+  border-color: var(--orange-2);
+}
+
+.layout-islero .islero-form {
+  border-color: #f2d3b4;
+  box-shadow: 0 1px 2px rgba(217, 120, 12, 0.08), 0 8px 24px -12px rgba(217, 120, 12, 0.28);
+}
+
+.layout-islero th {
+  background: #fdeedd;
+  color: var(--orange-2);
+}
+
+.layout-islero tbody tr:hover td {
+  background: #fff8f1;
+}
+
+.layout-islero .panel-detalle {
+  border-top-color: #f2d3b4;
+}
+
+.login-islero {
+  background: radial-gradient(1200px 600px at 80% -10%, var(--orange) 0%, var(--orange-2) 60%);
+}
+
+.login-islero .login-tabs button {
+  background: #fdf1e6;
+  border-color: #f2d3b4;
+  color: var(--text);
+}
+
+.login-islero .login-tabs button:hover {
+  background: #fdeedd;
+  color: var(--text);
+}
+
+.login-islero .login-tabs button.activo,
+.login-islero .login-tabs button.activo:hover {
+  background: var(--orange-2);
+  border-color: var(--orange-2);
+  color: #fff;
+}
+
+.login-islero form > button {
+  background: var(--orange-2);
+  border-color: var(--orange-2);
+}
+
+.login-islero form > button:hover {
+  background: var(--orange);
+  border-color: var(--orange-2);
+  color: var(--text);
+}
+
+.login-islero input:focus {
+  outline-color: var(--orange-2);
+  border-color: var(--orange-2);
 }

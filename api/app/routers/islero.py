@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..deps import require_islero
+from ..deps import ip_cliente, require_islero
 from ..models import Usuario
 from ..schemas import RegistroIsleroIn
 from ..services import registro_clientes
@@ -11,10 +11,8 @@ router = APIRouter(prefix="/islero", tags=["islero"])
 
 
 def _client_ip(request: Request) -> str:
-    reenviado = request.headers.get("x-forwarded-for", "")
-    if reenviado:
-        return reenviado.split(",")[0].strip()
-    return request.client.host if request.client else "desconocido"
+    # Se toma el ultimo salto de X-Forwarded-For (lo agrega el proxy).
+    return ip_cliente(request)
 
 
 def _http_error(exc: registro_clientes.ErrorRegistro) -> HTTPException:

@@ -6,9 +6,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /app/datos \
+    && chown -R app:app /app
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY --chown=app:app . .
+RUN chown -R app:app /app
+
+USER app
 
 CMD ["python", "conector.py", "daemon"]

@@ -10,6 +10,7 @@ import Canjes from './views/Canjes.jsx'
 import Funcionamiento from './views/Funcionamiento.jsx'
 import Ayuda from './views/Ayuda.jsx'
 import Recompensas from './views/Recompensas.jsx'
+import ChatbotWidget from './components/ChatbotWidget.jsx'
 
 const TABS_CLIENTE = [
   { key: 'datos', label: 'Mis datos' },
@@ -137,6 +138,8 @@ export default function App() {
           ))}
         </nav>
       )}
+
+      {logueado && <ChatbotWidget cliente={cliente} onNavegar={setVista} />}
     </div>
   )
 }

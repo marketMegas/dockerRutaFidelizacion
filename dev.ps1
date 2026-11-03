@@ -1,6 +1,21 @@
+#este file es para desarrollo local, no para producción. Para producción usar deploy.sh
+#los comados solo sirven en windows con powershell
+#Tabla de equivalencias de comandos entre Windows y Linux (docker compose)
+# Acción (.\dev.ps1)	Linux
+# up	docker compose up -d --build
+# build	docker compose build
+# down	docker compose down
+# restart	docker compose restart (o docker compose restart api)
+# ps	docker compose ps
+# logs	docker compose logs -f (o docker compose logs -f api)
+# health	curl -fsS http://127.0.0.1:8002/health y los demás checks
+# connector ...	docker compose --profile conector run --rm --no-deps connector python conector.py ...
+# dev-panel	cd panel && VITE_API_URL=http://127.0.0.1:8002/fid-api npm run dev
+# dev-pwa	cd pwa && VITE_API_URL=http://127.0.0.1:8002/fid-api npm run dev
+
 [CmdletBinding()]
 param(
-    [Parameter(Position = 0)]
+    [Parameter(Position = 0 )]
     [ValidateSet('up', 'build', 'down', 'restart', 'ps', 'logs', 'health', 'e2e', 'dev-panel', 'dev-pwa', 'connector', 'help')]
     [string]$Accion = 'help',
 

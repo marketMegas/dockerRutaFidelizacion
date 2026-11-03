@@ -13,6 +13,9 @@ os.environ["API_PREFIX"] = "/fid-api"
 # asi que se sube el tope para no bloquear la suite.
 os.environ["ADMIN_RATE_MAX"] = "100000"
 os.environ["ISLERO_RATE_MAX"] = "100000"
+os.environ["OTP_IP_RATE_MAX"] = "100000"
+os.environ["IDENT_IP_RATE_MAX"] = "100000"
+os.environ["SYNC_RATE_MAX"] = "100000"
 
 # El catalogo se aislia en un archivo propio: las pruebas no tocan el de la app.
 CATALOGO_TEST = Path(tempfile.gettempdir()) / "fidelizacion_catalogo_test.json"

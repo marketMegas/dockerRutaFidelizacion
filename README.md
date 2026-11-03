@@ -153,6 +153,26 @@ copy .env.example .env
 python conector.py menu
 ```
 
+## Asistente virtual de la PWA
+
+Con la sesión iniciada, el botón flotante de la PWA abre un chat que responde con los datos
+reales de la cuenta: saldo, nivel y consumo, canjes, recompensas disponibles, cuánto falta para
+un premio y últimos movimientos. Las respuestas se calculan en el backend con reglas
+deterministas (`/fid-api/asistente/consulta`); no se envían códigos de canje ni datos personales
+al navegador. Si el usuario pregunta por un código, el chat lo dirige a **Recompensas > Mis
+códigos**.
+
+El modo LLM es opcional y está apagado por defecto. Cuando se activa, solo se usa para preguntas
+que las reglas no reconocen y recibe un contexto agregado sin cédula, teléfono, email, placas ni
+códigos. Se configura con variables de entorno (ver `.env.example`):
+
+- `ASISTENTE_LLM_ENABLED=True`
+- `ASISTENTE_LLM_BASE_URL`, `ASISTENTE_LLM_API_KEY` y `ASISTENTE_LLM_MODEL`
+- `ASISTENTE_RATE_MAX` / `ASISTENTE_RATE_VENTANA` limitan las consultas por cliente.
+
+El proveedor debe ser compatible con la API de chat completions de OpenAI. Si el proveedor falla
+o no está configurado, el asistente sigue respondiendo por reglas.
+
 ## API (resumen)
 
 Prefijo `API_PREFIX=/fid-api`.
@@ -169,6 +189,8 @@ Prefijo `API_PREFIX=/fid-api`.
 - `GET  /fid-api/catalogo` — publico; premios activos con su costo y `codigos_disponibles` (no expone los codigos).
 - `POST /fid-api/canjes` `{premio_clave}` — canje autenticado; devuelve `canje_id`, `codigo`, `premio`,
   `puntos_costo`, `saldo` y `nivel`. `GET /fid-api/canjes/mis` — codigos del cliente.
+- `POST /fid-api/asistente/consulta` — chat del cliente autenticado (`{mensaje, historial}`); responde
+  por reglas y, si está habilitado, por LLM. Nunca devuelve códigos de canje.
 - `GET  /fid-api/config` — publico; tasa vigente (`puntos_por_litro`) y la escalera de `niveles`.
 - `GET  /fid-api/admin/resumen|ventas|clientes|canjes|reglas|catalogo` y endpoints de gestion/reverso.
   `GET /admin/canjes?q=<cedula>` filtra la bitacora de codigos entregados por cedula (solo lectura).
@@ -225,6 +247,8 @@ Valores a cambiar antes de produccion:
   (por defecto 10 intentos / 900 s).
 - `ISLERO_RATE_MAX` / `ISLERO_RATE_VENTANA`: limite de intentos de login de isleros por IP
   (por defecto 10 intentos / 900 s).
+- `ASISTENTE_LLM_ENABLED`: dejar en `False` salvo que se configure un proveedor LLM compatible
+  con OpenAI y se acepte enviar el contexto agregado de la cuenta.
 
 Luego:
 
