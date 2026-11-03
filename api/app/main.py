@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from .config import settings
 from .database import SessionLocal, engine
 from .models import Base, Regla
-from .routers import admin, auth, canjes, clientes, islero, sync
+from .routers import admin, auth, canjes, clientes, islero, sync, chatbot
 from .services import catalogo
 
 
@@ -46,6 +46,7 @@ app.include_router(islero.router, prefix=prefijo)
 app.include_router(sync.router, prefix=prefijo)
 app.include_router(canjes.router, prefix=prefijo)
 app.include_router(admin.router, prefix=prefijo)
+app.include_router(chatbot.router, prefix=prefijo)
 
 
 @app.get("/health")

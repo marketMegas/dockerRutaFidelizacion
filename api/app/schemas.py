@@ -117,3 +117,12 @@ class VehiculoIn(BaseModel):
 
 class ReversoIn(BaseModel):
     motivo: str = "reverso manual"
+
+
+class ChatMessageIn(BaseModel):
+    mensaje: str = Field(..., min_length=1, max_length=500)
+
+
+class ChatMessageOut(BaseModel):
+    respuesta: str
+    sugerencias: list[str] = []
