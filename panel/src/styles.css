@@ -940,3 +940,101 @@ tbody tr:hover td {
     font-size: 0.85rem;
   }
 }
+
+/* ---------- Modulo de isleros: acentos naranja de la paleta ---------- */
+
+.layout-islero .sidebar {
+  background: var(--orange);
+}
+
+.layout-islero .brand span {
+  color: #fff;
+}
+
+.layout-islero .sidebar nav button:hover {
+  background: var(--orange-2);
+  color: #fff;
+}
+
+.layout-islero .sidebar nav button.activo {
+  background: var(--orange-2);
+  color: #fff;
+  border-left-color: #fff;
+}
+
+.layout-islero .salir:hover {
+  border-color: #fff;
+}
+
+.layout-islero .contenido button {
+  background: var(--orange-2);
+  border-color: var(--orange-2);
+  color: #fff;
+}
+
+.layout-islero .contenido button:hover {
+  background: var(--orange);
+  border-color: var(--orange-2);
+  color: var(--text);
+}
+
+.layout-islero .contenido input:not(.input-placa):focus {
+  outline-color: var(--orange-2);
+  border-color: var(--orange-2);
+}
+
+.layout-islero .islero-form {
+  border-color: #f2d3b4;
+  box-shadow: 0 1px 2px rgba(217, 120, 12, 0.08), 0 8px 24px -12px rgba(217, 120, 12, 0.28);
+}
+
+.layout-islero th {
+  background: #fdeedd;
+  color: var(--orange-2);
+}
+
+.layout-islero tbody tr:hover td {
+  background: #fff8f1;
+}
+
+.layout-islero .panel-detalle {
+  border-top-color: #f2d3b4;
+}
+
+.login-islero {
+  background: radial-gradient(1200px 600px at 80% -10%, var(--orange) 0%, var(--orange-2) 60%);
+}
+
+.login-islero .login-tabs button {
+  background: #fdf1e6;
+  border-color: #f2d3b4;
+  color: var(--text);
+}
+
+.login-islero .login-tabs button:hover {
+  background: #fdeedd;
+  color: var(--text);
+}
+
+.login-islero .login-tabs button.activo,
+.login-islero .login-tabs button.activo:hover {
+  background: var(--orange-2);
+  border-color: var(--orange-2);
+  color: #fff;
+}
+
+.login-islero form > button {
+  background: var(--orange-2);
+  border-color: var(--orange-2);
+}
+
+.login-islero form > button:hover {
+  background: var(--orange);
+  border-color: var(--orange-2);
+  color: var(--text);
+}
+
+.login-islero input:focus {
+  outline-color: var(--orange-2);
+  border-color: var(--orange-2);
+}
