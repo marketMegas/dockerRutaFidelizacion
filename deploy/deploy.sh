@@ -32,6 +32,37 @@ preparar_env() {
   fi
 }
 
+# Asegura REDIS_PASSWORD en .env existente (si no la genera) y sincroniza REDIS_URL.
+asegurar_redis_pass() {
+  local redis_pass actual url
+  actual="$(grep -E '^REDIS_PASSWORD=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | tr -d '[:space:]' || true)"
+  if [ -z "$actual" ] || [ "$actual" = "cambiar_por_openssl_rand_hex_24" ]; then
+    redis_pass="$(openssl rand -hex 24)"
+    if grep -qE '^REDIS_PASSWORD=' "$ENV_FILE"; then
+      sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${redis_pass}|" "$ENV_FILE"
+    else
+      printf '\nREDIS_PASSWORD=%s\n' "$redis_pass" >> "$ENV_FILE"
+    fi
+    echo ">> REDIS_PASSWORD generada."
+  else
+    redis_pass="$actual"
+    echo ">> REDIS_PASSWORD ya presente."
+  fi
+  url="$(grep -E '^REDIS_URL=' "$ENV_FILE" | tail -n1 | cut -d= -f2- || true)"
+  case ":${url}:" in
+    *":${redis_pass}@"*) ;;
+    *)
+      if grep -qE '^REDIS_URL=' "$ENV_FILE"; then
+        sed -i "s|^REDIS_URL=.*|REDIS_URL=redis://:${redis_pass}@redis:6379/0|" "$ENV_FILE"
+      else
+        printf 'REDIS_URL=redis://:%s@redis:6379/0\n' "$redis_pass" >> "$ENV_FILE"
+      fi
+      echo ">> REDIS_URL sincronizada con REDIS_PASSWORD."
+      ;;
+  esac
+  chmod 600 "$ENV_FILE"
+}
+
 # Genera el env minimo del conector a partir de .env (minimo privilegio).
 preparar_env_conector() {
   local salida="$APP_DIR/.env.connector"
@@ -120,6 +151,7 @@ cargar_env
 case "$ACCION" in
   up)
     preparar_env
+    asegurar_redis_pass
     cargar_env
     validar_env
     preparar_env_conector
@@ -140,6 +172,7 @@ case "$ACCION" in
     ;;
   update)
     git pull --ff-only || echo ">> Sin repositorio git; continuando con el codigo local."
+    asegurar_redis_pass
     cargar_env
     validar_env
     preparar_env_conector
