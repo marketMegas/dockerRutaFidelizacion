@@ -16,17 +16,32 @@ cd "$APP_DIR"
 preparar_env() {
   if [ ! -f "$ENV_FILE" ]; then
     cp .env.example .env
-    local secret
+    local secret redis_pass
     secret="$(openssl rand -hex 32)"
+    redis_pass="$(openssl rand -hex 24)"
     sed -i "s|^SECRET_KEY=.*|SECRET_KEY=${secret}|" .env
     sed -i "s|^DEBUG=.*|DEBUG=False|" .env
+    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${redis_pass}|" .env
+    sed -i "s|^REDIS_URL=.*|REDIS_URL=redis://:${redis_pass}@redis:6379/0|" .env
     chmod 600 "$ENV_FILE"
-    echo ">> Creado .env nuevo con SECRET_KEY aleatoria."
+    echo ">> Creado .env nuevo con SECRET_KEY y REDIS_PASSWORD aleatorias."
     echo ">> IMPORTANTE: edita .env y cambia SYNC_API_KEY, POSTGRES_PASSWORD, ADMIN_PASSWORD y SMS_PROVIDER."
   else
     chmod 600 "$ENV_FILE"
     echo ">> Usando .env existente."
   fi
+}
+
+# Genera el env minimo del conector a partir de .env (minimo privilegio).
+preparar_env_conector() {
+  local salida="$APP_DIR/.env.connector"
+  umask 077
+  {
+    grep -E '^(SYNC_API_KEY|ESTACION_ID|ZENCILLO_MODO|ZENCILLO_API_URL|ZENCILLO_API_KEY|ZENCILLO_ARCHIVO|POLL_SEGUNDOS|COLA_ARCHIVO)=' "$ENV_FILE" || true
+    grep -qE '^POLL_SEGUNDOS=' "$ENV_FILE" || echo "POLL_SEGUNDOS=30"
+  } > "$salida.tmp"
+  mv "$salida.tmp" "$salida"
+  chmod 600 "$salida"
 }
 
 cargar_env() {
@@ -41,7 +56,7 @@ cargar_env() {
 validar_env() {
   local faltantes=()
   local var
-  for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL REDIS_URL \
+  for var in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB DATABASE_URL REDIS_URL REDIS_PASSWORD \
     SECRET_KEY ADMIN_USER ADMIN_PASSWORD SYNC_API_KEY CORS_ORIGINS SMS_PROVIDER ESTACION_ID; do
     if [ -z "${!var:-}" ]; then
       faltantes+=("$var")
@@ -74,6 +89,12 @@ validar_env() {
   if [ "${POSTGRES_PASSWORD:-}" = "fidelizacion" ]; then
     inseguras+=("POSTGRES_PASSWORD (valor de plantilla)")
   fi
+  if [ "${REDIS_PASSWORD:-}" = "cambiar_por_openssl_rand_hex_24" ] || [ ${#REDIS_PASSWORD} -lt 16 ]; then
+    inseguras+=("REDIS_PASSWORD (plantilla o menos de 16 caracteres)")
+  fi
+  if [ -n "${REDIS_PASSWORD:-}" ] && [[ "${REDIS_URL:-}" != *"${REDIS_PASSWORD}"* ]]; then
+    inseguras+=("REDIS_URL no incluye REDIS_PASSWORD")
+  fi
   if [ "$sync" = "dev-api-key" ] || [ ${#sync} -lt 16 ]; then
     inseguras+=("SYNC_API_KEY (plantilla o menos de 16 caracteres)")
   fi
@@ -101,6 +122,7 @@ case "$ACCION" in
     preparar_env
     cargar_env
     validar_env
+    preparar_env_conector
     echo ">> Construyendo y levantando contenedores..."
     docker compose -f "$COMPOSE_FILE" up -d --build --wait --wait-timeout 240
     echo
@@ -120,6 +142,7 @@ case "$ACCION" in
     git pull --ff-only || echo ">> Sin repositorio git; continuando con el codigo local."
     cargar_env
     validar_env
+    preparar_env_conector
     docker compose -f "$COMPOSE_FILE" up -d --build --wait --wait-timeout 240
     docker compose -f "$COMPOSE_FILE" ps
     ;;

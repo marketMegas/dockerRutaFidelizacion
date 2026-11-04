@@ -56,6 +56,10 @@ body,
   min-height: 100%;
 }
 
+html {
+  font-size: 18px;
+}
+
 body {
   font-family: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--tinta);
@@ -217,6 +221,11 @@ h2::after {
   font-size: 1.35rem;
 }
 
+.navbar .saldo-mini-t {
+  font-size: 0.8rem;
+  color: var(--menta-claro);
+}
+
 .navbar .sesion {
   border: 0;
   font: inherit;
@@ -241,8 +250,8 @@ h2::after {
 }
 
 .navbar .sesion.salir {
-    background: rgba(8, 39, 112, 0.14);
-  color: var(--tinta-sobre-marca);
+  background: var(--menta);
+  color: var(--placa-tinta);
 }
 
 .navbar .sesion.salir:hover {
@@ -1146,7 +1155,7 @@ button.primario:active {
   background: var(--menta-claro);
   border-color: #b9f0dc;
   box-shadow: var(--sombra-card);
-  min-height: 112px;
+  height: 196px;
 }
 
 .premio-card--menta .premio-nombre {
@@ -1507,7 +1516,7 @@ button.primario:active {
 .login-hero p {
   color: var(--muted);
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 1.15rem;
 }
 
 .login form {
@@ -2166,6 +2175,11 @@ button.primario:active {
     max-width: 1280px;
   }
 
+  .vista button.primario {
+    max-width: 340px;
+    margin-inline: auto;
+  }
+
   /* Las tarjetas de recompensa se reparten en columnas anchas y crecen con la pantalla */
   .premios {
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -2409,3 +2423,11 @@ button.primario:active {
     font-size: 1.05rem;
   }
 }
+
+
+
+
+.lista-info span.contacto-atencion {
+  font-size: 0.85rem;
+}
+

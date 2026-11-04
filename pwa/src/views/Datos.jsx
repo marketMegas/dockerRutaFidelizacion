@@ -84,10 +84,6 @@ export default function Datos({ cliente, refrescar }) {
           </li>
         ))}
       </ul>
-
-      <button className="primario" onClick={refrescar}>
-        Actualizar mis datos
-      </button>
     </div>
   )
 }

@@ -1,9 +1,21 @@
 name: fidelizacion-glp
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    pids_limit: 200
+    mem_limit: 512m
+    cpus: 1.0
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-fidelizacion}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fidelizacion}
@@ -12,6 +24,8 @@ services:
       - datos_db:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:5433:5432"
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fidelizacion} -d ${POSTGRES_DB:-fidelizacion}"]
       interval: 10s
@@ -19,15 +33,28 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    pids_limit: 100
+    mem_limit: 256m
+    cpus: 0.5
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Falta REDIS_PASSWORD en .env}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$${REDIS_PASSWORD}\""]
     volumes:
       - datos_redis:/data
     ports:
       - "127.0.0.1:6380:6379"
+    networks:
+      - backend
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,10 +62,21 @@ services:
   api:
     build: ./api
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    pids_limit: 200
+    mem_limit: 768m
+    cpus: 1.0
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
     env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://fidelizacion:fidelizacion@db:5432/fidelizacion}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_URL: ${REDIS_URL:?Falta REDIS_URL en .env}
       CATALOGO_PATH: ${CATALOGO_PATH:-/app/data/catalogo.json}
       TZ_ESTACION: ${TZ_ESTACION:-America/Bogota}
     depends_on:
@@ -50,6 +88,9 @@ services:
       - datos_catalogo:/app/data
     ports:
       - "127.0.0.1:8002:8000"
+    networks:
+      - backend
+      - app
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
       interval: 15s
@@ -60,37 +101,80 @@ services:
   panel:
     build: ./panel
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    pids_limit: 100
+    mem_limit: 128m
+    cpus: 0.5
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
     depends_on:
       api:
         condition: service_healthy
     ports:
-      - "127.0.0.1:5139:80"
+      - "127.0.0.1:5139:8080"
+    networks:
+      - app
 
   pwa:
     build: ./pwa
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    pids_limit: 100
+    mem_limit: 128m
+    cpus: 0.5
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
     depends_on:
       api:
         condition: service_healthy
     ports:
-      - "127.0.0.1:5140:80"
+      - "127.0.0.1:5140:8080"
+    networks:
+      - app
 
   connector:
     build: ./connector-zencillo
     restart: unless-stopped
     profiles: ["conector"]
-    env_file: .env
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    pids_limit: 100
+    mem_limit: 256m
+    cpus: 0.5
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    env_file: .env.connector
     environment:
       FID_API_URL: http://api:8000/fid-api
-      ESTACION_ID: ${ESTACION_ID:-EDS-01}
+      COLA_ARCHIVO: ${COLA_ARCHIVO:-/app/datos/cola_offline.json}
     depends_on:
       api:
         condition: service_healthy
     volumes:
       - datos_conector:/app/datos
+    networks:
+      - app
 
 volumes:
   datos_db:
   datos_redis:
   datos_catalogo:
   datos_conector:
+
+networks:
+  backend:
+  app:

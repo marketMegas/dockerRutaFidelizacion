@@ -27,11 +27,15 @@ body,
   height: 100%;
 }
 
+html {
+  font-size: 17px;
+}
+
 body {
   font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--text);
   background: var(--bg);
-  font-size: 15px;
+  font-size: 1rem;
   line-height: 1.5;
 }
 
@@ -88,7 +92,8 @@ h4 {
 }
 
 .brand span {
-  color: var(--orange);
+  color: #2f6fed;
+  white-space: nowrap;
 }
 
 .sidebar nav {
@@ -257,25 +262,35 @@ td button + button {
 }
 
 .celda-acciones {
-  min-width: 150px;
+  white-space: normal;
   vertical-align: middle;
-  white-space: nowrap;
+  min-width: 150px;
 }
 
-/* Cuando hay dos botones (ej. Editar + Activar/Desactivar) van del mismo ancho */
-.celda-acciones:has(> button + button) {
-  min-width: 205px;
-}
-
-.celda-acciones:has(> button + button) > button {
-  width: calc(50% - 0.2rem);
-  min-height: 36px;
+.celda-acciones > button {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  min-height: 36px;
   white-space: nowrap;
+  margin-left: 0.4rem;
+}
+
+.celda-acciones > button:first-child {
+  margin-left: 0;
 }
 
 .celda-acciones > button + button {
   margin-left: 0.4rem;
+}
+
+/* Exactamente dos botones: mismo ancho */
+.celda-acciones:has(> button:nth-child(2)):not(:has(> button:nth-child(3))) {
+  min-width: 205px;
+}
+
+.celda-acciones:has(> button:nth-child(2)):not(:has(> button:nth-child(3))) > button {
+  width: calc(50% - 0.2rem);
 }
 
 /* Boton unico (ej. Detalle) un poco mas compacto para alinearse */
@@ -621,7 +636,7 @@ tbody tr:hover td {
 .login-tabs button {
   flex: 1;
   background: #eef7ea;
-  color: var(--text);
+  color: #000;
   border-color: var(--line);
   font-weight: 600;
   padding: 0.45rem 0.5rem;
@@ -641,8 +656,9 @@ tbody tr:hover td {
 
 .sidebar-usuario {
   margin: -0.9rem 0 1rem;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.85rem;
+  color: #000;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .islero-form {
@@ -954,7 +970,7 @@ tbody tr:hover td {
 }
 
 .layout-islero .brand span {
-  color: #fff;
+  color: #2f6fed;
 }
 
 .layout-islero .sidebar nav button:hover {
@@ -970,6 +986,12 @@ tbody tr:hover td {
 
 .layout-islero .salir:hover {
   border-color: #fff;
+}
+
+.layout-islero .sidebar-usuario {
+  color: #000;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .layout-islero .contenido button {
@@ -1043,4 +1065,8 @@ tbody tr:hover td {
 .login-islero input:focus {
   outline-color: var(--orange-2);
   border-color: var(--orange-2);
+}
+
+.login form .muted {
+  color: #000;
 }

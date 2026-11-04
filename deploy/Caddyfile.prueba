@@ -24,28 +24,28 @@ https://prueba-fidelizacion.megas.com.co:8443 {
 		# API directa (navegador/Swagger/curl): exige usuario/contraseña.
 		handle /fid-api/* {
 			basic_auth {
-				prueba_fid $2b$14$R5.S4ficqn5CaQFFz/R.Gel7WF8cWlGpJ8w487bub4eVr3cOaCfTq
+				{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
 			}
 			reverse_proxy api:8000
 		}
 
 		# Panel: SIN Basic Auth (solo su propio login de la app).
 		handle /panel/* {
-			reverse_proxy panel:80
+			reverse_proxy panel:8080
 		}
 
 		# PWA: pide contrasena solo al entrar (documento inicial).
 		@entrada path / /index.html
 		handle @entrada {
 			basic_auth {
-				prueba_fid $2b$14$R5.S4ficqn5CaQFFz/R.Gel7WF8cWlGpJ8w487bub4eVr3cOaCfTq
+				{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
 			}
-			reverse_proxy pwa:80
+			reverse_proxy pwa:8080
 		}
 
 		# Resto de la PWA (assets, manifest, sw, rutas internas): sin prompt.
 		handle {
-			reverse_proxy pwa:80
+			reverse_proxy pwa:8080
 		}
 	}
 }

@@ -92,6 +92,7 @@ El personal que despacha combustible puede registrar clientes de forma presencia
 
 ```bash
 cp .env.example .env
+cp .env.connector.example .env.connector   # solo si vas a usar el conector
 docker compose up -d --build
 ```
 
@@ -235,6 +236,8 @@ nano .env
 Valores a cambiar antes de produccion:
 
 - `SECRET_KEY`: cadena aleatoria larga (`openssl rand -base64 48`). El script la genera si falta.
+- `REDIS_PASSWORD`: password de Redis (`openssl rand -hex 24`). El script la genera si falta y la
+  escribe dentro de `REDIS_URL`; si cambias una, actualiza la otra.
 - `SYNC_API_KEY`: clave que usara el conector. Debe coincidir con la del conector.
 - `POSTGRES_PASSWORD`: password fuerte de la base de datos.
 - `ADMIN_PASSWORD`: cambia el `admin123`.

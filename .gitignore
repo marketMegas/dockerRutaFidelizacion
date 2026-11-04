@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.prueba
+.env.connector
+.env.prueba.connector
 *.env.produccion
 
 # Python

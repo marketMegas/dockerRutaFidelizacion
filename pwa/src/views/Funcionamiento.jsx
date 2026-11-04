@@ -76,20 +76,8 @@ export default function Funcionamiento() {
         </li>
         <li>
           <div className="lista-info">
-            <strong>Los puntos no vencen</strong>
-            <span className="muted">Acumúlalos y canjéalos cuando quieras.</span>
-          </div>
-        </li>
-        <li>
-          <div className="lista-info">
             <strong>Cada código se usa una vez</strong>
             <span className="muted">El código que recibes es único y queda asociado a tu cuenta.</span>
-          </div>
-        </li>
-        <li>
-          <div className="lista-info">
-            <strong>Cambios de teléfono</strong>
-            <span className="muted">Entra con tu placa y registra el nuevo celular.</span>
           </div>
         </li>
       </ul>

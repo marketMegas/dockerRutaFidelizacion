@@ -5,7 +5,7 @@ const PREGUNTAS = [
   },
   {
     q: 'No me llega el código',
-    a: 'Espera un momento y pide uno nuevo. Verifica que el celular sea el número con el cual te registraste y sea el correcto.',
+    a: 'Verifica que el celular sea el número con el cual te registraste y sea el correcto.',
   },
   {
     q: 'Qué es el nivel y cómo funciona?',
@@ -31,10 +31,6 @@ const PREGUNTAS = [
     q: 'No veo mis puntos',
     a: 'Puede tardar unos segundos después de cada carga. En Inicio usa Actualizar saldo para consultarlos de nuevo.',
   },
-  {
-    q: 'Puedo usar la app sin internet?',
-    a: 'La app instalada abre sin conexión, pero para iniciar sesión y ver tu saldo necesitas internet.',
-  },
 ]
 
 export default function Ayuda() {
@@ -57,13 +53,7 @@ export default function Ayuda() {
         <li>
           <div className="lista-info">
             <strong>Atención en la estación</strong>
-            <span className="muted">Consulta al personal de la estación de servicio.</span>
-          </div>
-        </li>
-        <li>
-          <div className="lista-info">
-            <strong>Soporte del programa</strong>
-            <span className="muted">Informa tu cédula o placa para revisar tu cuenta más rápido.</span>
+            <span className="muted contacto-atencion">Consulta al personal de la estación de servicio para inscribirte de manera fácil y rápida.</span>
           </div>
         </li>
       </ul>

@@ -42,6 +42,7 @@ export default function App() {
   }
 
   function salir() {
+    if (!window.confirm('¿Seguro que deseas cerrar sesión?')) return
     setToken('')
     setLogueado(false)
     setCliente(null)
